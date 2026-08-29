@@ -1,11 +1,26 @@
 <?php
 
+use App\Http\Controllers\PaymentController;
 use Illuminate\Support\Facades\Route;
 
-use App\Http\Controllers\OrderController;
-
 Route::get('/', function () {
-    return view('welcome');
+    return redirect('/admin');
 });
 
-Route::get('/orders/{order:invoice_number}', [OrderController::class, 'show'])->name('orders.show');
+Route::get('/payment/success', function () {
+    return response()->view('payment.status', ['status' => 'success']);
+})->name('payment.success');
+
+Route::get('/payment/pending', function () {
+    return response()->view('payment.status', ['status' => 'pending']);
+})->name('payment.pending');
+
+Route::get('/payment/failed', function () {
+    return response()->view('payment.status', ['status' => 'failed']);
+})->name('payment.failed');
+
+Route::get('/parent', function () {
+    return redirect('/portal');
+});
+
+Route::post('/payment/callback', [PaymentController::class, 'handleCallback'])->name('payment.callback');
