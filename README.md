@@ -32,7 +32,7 @@ Sistem ini dibangun dengan arsitektur **Modular Monolith Enterprise** menggunaka
 | **PDF Document** | DomPDF | `^3.1` | Generasi Invoice, Kuitansi Berstempel & Rekapitulasi PDF |
 | **Spreadsheet System**| Pure RFC-4180 CSV | Standard | Export/Import Data Siswa dengan UTF-8 BOM untuk MS Excel |
 | **Database** | MySQL | `>= 8.0` | Relational Database Storage dengan Indexing Optimal |
-| **Testing Suite** | PHPUnit | `^11.5` | Automated Unit & Feature Testing (19/19 Passing - 100%) |
+| **Testing Suite** | PHPUnit | `^11.5` | Automated Unit & Feature Testing (19/19 Passing, 42 assertions - 100%) |
 
 ---
 
@@ -64,21 +64,22 @@ Sistem ini dibangun dengan arsitektur **Modular Monolith Enterprise** menggunaka
 * Modul Beasiswa dikonfigurasi sebagai **Bantuan Finansial Tunai Langsung** kepada siswa berprestasi / kurang mampu.
 * Nominal beasiswa dicairkan langsung secara fisik ke siswa/wali tanpa memotong tagihan SPP di sistem secara sepihak, menjaga integritas rekonsiliasi kas riil madrasah.
 
-### 4. Otomasi WhatsApp & 1-Klik Kirim Pesan (`wa.me`)
+### 4. Otomasi WhatsApp & 1-Klik Kirim Pesan (`wa.me`) dengan Dokumen PDF
 * **100% Bebas Biaya Langganan Gateway**: Menggunakan integrasi URL generator resmi `https://wa.me/` yang langsung membuka aplikasi WhatsApp / WhatsApp Web.
-* Dilengkapi pencatatan **Log WhatsApp** otomatis (`whatsapp_logs`) untuk audit riwayat pengingat tagihan H-2 jatuh tempo, notifikasi tagihan baru, dan konfirmasi bukti bayar lunas.
-* Tombol **Kirim WhatsApp** langsung tersedia di tabel Tagihan dan tabel Pembayaran.
+* **Tautan Dokumen PDF Resmi Berstempel**: Pesan notifikasi WhatsApp otomatis melampirkan tautan unduh dokumen PDF resmi (`/docs/invoice/{no}` untuk tagihan dan `/docs/receipt/{no}` untuk kuitansi sah), sehingga wali murid dapat langsung mengunduh/melihat dokumen berstempel dari HP atau PC.
+* **Format Pesan Berstandar Institusi**: Desain tipografi rapi, bullet point terstruktur (`•`), dan penanganan aman *multi-byte unicode* anti karakter rusak (*garbled text*).
+* **Normalisasi Cerdas Nomor HP**: Otomatis mengonversi nomor berawalan `08xx`, `+628xx`, maupun `8xx` menjadi format standar internasional `628xx`.
+* **Pencatatan Log WhatsApp**: Log otomatis tersimpan di tabel `whatsapp_logs` untuk audit riwayat pengingat tagihan H-2 jatuh tempo, notifikasi tagihan baru, dan konfirmasi bukti bayar lunas.
 
-### 5. Generate Tagihan Terpadu (Massal & Fleksibel)
-* Tombol **"Generate Tagihan"** di halaman Tagihan (`/admin/bills`).
-* **Fleksibilitas Target Penerima**:
-  * 🔘 *Semua Siswa Aktif* (Seluruh MTs).
-  * 🔘 *Per Angkatan / Tingkat Kelas* (Kelas 7, 8, atau 9).
-  * 🔘 *Per Rombel Spesifik* (e.g., 7.1, 8.2, 9.1, dst.).
-* **Otomatisasi & Proteksi**:
-  * Otomatis membaca matriks tarif resmi per tingkat kelas.
-  * Mendukung penagihan reguler (Single) maupun skema cicilan (Tenor).
-  * Dilengkapi proteksi *Idempotency* (melewati siswa yang sudah memiliki tagihan yang sama untuk mencegah tagihan ganda).
+### 5. Kelola Tagihan & Prioritas Pengurutan Cerdas
+* **Prioritas Pengurutan Status Urgensi**:
+  1. 🔴 **Paling Atas: Status "Terlambat" (`overdue`)** — Memudahkan admin memprioritaskan penagihan siswa yang melewati batas jatuh tempo.
+  2. 🟡 **Urutan Kedua: Status "Belum Lunas" (`unpaid`)** — Tagihan aktif yang belum jatuh tempo.
+  3. 🟢 **Paling Bawah: Status "Lunas" (`paid`) & "Dibatalkan" (`cancelled`)**.
+* **Tombol "Generate Tagihan" Massal**:
+  * Fleksibilitas target: *Semua Siswa Aktif*, *Per Angkatan / Tingkat Kelas*, atau *Per Rombel Spesifik*.
+  * Otomatis membaca matriks tarif resmi per tingkat kelas dan mendukung skema cicilan (Tenor).
+  * Dilengkapi proteksi *Idempotency* mencegah tagihan ganda.
 
 ### 6. Transisi Tahun Ajaran & Pengecualian Siswa Tinggal Kelas
 * Tombol **"Tahun Ajaran Baru & Kenaikan Kelas"** di halaman Master Tahun Ajaran.
@@ -172,6 +173,7 @@ administrasi-pondok/
 │   │
 │   ├── Http/
 │   │   └── Controllers/
+│   │       ├── DocumentController.php            # Controller unduh Invoice & Kuitansi PDF resmi via link publik (/docs/...)
 │   │       └── PaymentController.php            # Endpoint Webhook Callback Midtrans (Verifikasi SHA512 Signature)
 │   │
 │   ├── Models/                                  # Eloquent Models & Aturan Bisnis Basis Data
@@ -375,7 +377,7 @@ php artisan test
    PASS  Tests\Unit\WhatsAppAutomationServiceTest (3 tests)
    PASS  Tests\Feature\ExampleTest (1 test)
 
-  Tests:    19 passed (39 assertions)
+  Tests:    19 passed (42 assertions)
   Duration: ~3.00s (100% Success)
 ```
 
