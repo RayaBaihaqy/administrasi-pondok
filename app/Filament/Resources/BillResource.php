@@ -232,7 +232,17 @@ class BillResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn ($query) => $query->with(['student', 'paymentType', 'academicYear']))
+            ->modifyQueryUsing(fn ($query) => $query
+                ->with(['student', 'paymentType', 'academicYear'])
+                ->orderByRaw("CASE bills.status 
+                    WHEN 'overdue' THEN 1 
+                    WHEN 'unpaid' THEN 2 
+                    WHEN 'paid' THEN 3 
+                    WHEN 'cancelled' THEN 4 
+                    ELSE 5 
+                END ASC")
+                ->orderBy('bills.due_date', 'asc')
+            )
             ->columns([
                 Tables\Columns\TextColumn::make('bill_number')
                     ->label('No. Tagihan')
@@ -405,8 +415,7 @@ class BillResource extends Resource
                 Actions\BulkActionGroup::make([
                     Actions\DeleteBulkAction::make(),
                 ]),
-            ])
-            ->defaultSort('due_date', 'desc');
+            ]);
     }
 
     public static function getRelations(): array

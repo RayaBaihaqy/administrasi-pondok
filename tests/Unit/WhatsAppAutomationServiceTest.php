@@ -31,6 +31,12 @@ class WhatsAppAutomationServiceTest extends TestCase
 
         $url2 = WhatsAppAutomationService::createWhatsAppUrl('+62 812-3456-7890', 'Pesan');
         $this->assertStringStartsWith('https://wa.me/6281234567890?text=', $url2);
+
+        $url3 = WhatsAppAutomationService::createWhatsAppUrl('81234567890', 'Pesan Tanpa 0');
+        $this->assertStringStartsWith('https://wa.me/6281234567890?text=', $url3);
+
+        $log = new WhatsAppLog(['phone_number' => '081234567890', 'message_content' => 'Test Accessor']);
+        $this->assertStringStartsWith('https://wa.me/6281234567890?text=', $log->whatsapp_url);
     }
 
     public function test_format_new_bill_message_uses_parent_full_name(): void
@@ -84,5 +90,6 @@ class WhatsAppAutomationServiceTest extends TestCase
         $this->assertEquals('081299998888', $data['phone_number']);
         $this->assertStringContainsString('Bapak Ahmad Ridwan', $data['message']);
         $this->assertStringContainsString('Ananda Fatih', $data['message']);
+        $this->assertStringContainsString('/docs/invoice/', $data['message']);
     }
 }
