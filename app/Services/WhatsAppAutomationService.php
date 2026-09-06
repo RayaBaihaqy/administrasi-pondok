@@ -30,7 +30,7 @@ class WhatsAppAutomationService
 
         $msg = "==============================\n"
             ."*YAYASAN PERGURUAN ISLAM MIFTAHUL 'ULUM*\n"
-            ."*MTs. MIFTAHUL 'ULUM CIBITUNG*\n"
+            ."*MTs. MIFTAHUL 'ULUM*\n"
             ."==============================\n\n"
             ."*BUKTI PEMBAYARAN PENDIDIKAN (LUNAS)*\n"
             ."_Assalamu'alaikum Warahmatullahi Wabarakatuh_\n\n"
@@ -105,7 +105,7 @@ class WhatsAppAutomationService
 
         $msg = "==============================\n"
             ."*YAYASAN PERGURUAN ISLAM MIFTAHUL 'ULUM*\n"
-            ."*MTs. MIFTAHUL 'ULUM CIBITUNG*\n"
+            ."*MTs. MIFTAHUL 'ULUM*\n"
             ."==============================\n\n"
             ."*PENGINGAT JATUH TEMPO PEMBAYARAN*\n"
             ."_Assalamu'alaikum Warahmatullahi Wabarakatuh_\n\n"
@@ -184,7 +184,7 @@ class WhatsAppAutomationService
 
         $msg = "==============================\n"
             ."*YAYASAN PERGURUAN ISLAM MIFTAHUL 'ULUM*\n"
-            ."*MTs. MIFTAHUL 'ULUM CIBITUNG*\n"
+            ."*MTs. MIFTAHUL 'ULUM*\n"
             ."==============================\n\n"
             ."*PEMBERITAHUAN TAGIHAN PENDIDIKAN*\n"
             ."_Assalamu'alaikum Warahmatullahi Wabarakatuh_\n\n"

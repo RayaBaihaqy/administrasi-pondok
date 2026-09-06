@@ -253,7 +253,7 @@
             </td>
             <td class="kop-institution">
                 <div class="kop-yayasan">{{ config('school.name', "YAYASAN PERGURUAN ISLAM MIFTAHUL 'ULUM") }}</div>
-                <div class="kop-school">{{ config('school.institution', "MTs. MIFTAHUL 'ULUM CIBITUNG") }}</div>
+                <div class="kop-school">{{ config('school.institution', "MTs. MIFTAHUL 'ULUM") }}</div>
                 <div class="kop-address">{{ config('school.address', 'Jl. Raya Setu Kp. Cibuntu RT. 002/007 Desa Cibuntu Kec. Cibitung') }}</div>
             </td>
             <td class="kop-meta">
