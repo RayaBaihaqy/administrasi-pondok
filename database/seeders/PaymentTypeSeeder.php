@@ -114,10 +114,10 @@ class PaymentTypeSeeder extends Seeder
             'description' => 'Biaya administrasi daftar ulang buku dan modul kenaikan kelas',
         ]);
 
-        // 9. Pendaftaran Siswa Baru (Uang Masuk Kelas 7, Cicilan 3x)
+        // 9. Pendaftaran Siswa Baru (Kelas 7, Cicilan 3x)
         $pendaftaranBaru = PaymentType::create([
             'code' => PaymentType::CODE_PENDAFTARAN_BARU,
-            'name' => 'Pendaftaran Siswa Baru (Uang Masuk)',
+            'name' => 'Pendaftaran Siswa Baru',
             'billing_type' => PaymentType::BILLING_TYPE_ONE_TIME,
             'allows_installment' => true, // Boleh dicicil 3x (Sesuai Konfirmasi Client)
             'default_amount' => 1500000,  // Rp 1.500.000

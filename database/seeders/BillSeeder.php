@@ -175,7 +175,7 @@ class BillSeeder extends Seeder
                         'paid_amount' => $isTPaid ? $installmentPerMonth : 0,
                         'outstanding_amount' => $isTPaid ? 0 : $installmentPerMonth,
                         'status' => $isTPaid ? Bill::STATUS_PAID : Bill::STATUS_UNPAID,
-                        'notes' => "Cicilan {$t} dari 3 - Uang Masuk Siswa Baru MTs",
+                        'notes' => "Cicilan {$t} dari 3 - Pendaftaran Siswa Baru MTs",
                     ]);
 
                     BillItem::create([
@@ -197,7 +197,7 @@ class BillSeeder extends Seeder
                             'status' => Payment::STATUS_SUCCESS,
                             'source' => Payment::SOURCE_MANUAL,
                             'method' => 'bank_transfer',
-                            'notes' => "Pembayaran Cicilan {$t} dari 3 Uang Masuk",
+                            'notes' => "Pembayaran Cicilan {$t} dari 3 Pendaftaran Siswa Baru",
                             'paid_at' => "2026-{$tMonthStr}-20 10:00:00",
                             'created_at' => "2026-{$tMonthStr}-20 10:00:00",
                             'updated_at' => "2026-{$tMonthStr}-20 10:00:00",

@@ -325,7 +325,7 @@
                     <tr>
                         <td class="info-label">Tanggal Bayar</td>
                         <td>:</td>
-                        <td class="info-value">{{ \Carbon\Carbon::parse($payment->paid_at ?? now())->translatedFormat('d F Y H:i') }} WIB</td>
+                        <td class="info-value">{{ \Carbon\Carbon::parse($payment->paid_at ?? now())->translatedFormat('d F Y H:i:s') }} WIB</td>
                     </tr>
                 </table>
             </div>
@@ -365,7 +365,7 @@
     <tr>
         <td class="bottom-col-left">
             <div class="bill-status-box">
-                <div class="bill-status-title">📑 Status Tagihan Terkait:</div>
+                <div class="bill-status-title">Status Tagihan Terkait:</div>
                 <table class="calculation-table">
                     <tr>
                         <td width="55%" style="color: #666;">Total Tagihan:</td>
