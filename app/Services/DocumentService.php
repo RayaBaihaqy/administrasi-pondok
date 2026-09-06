@@ -17,10 +17,10 @@ class DocumentService
      */
     public function generatePaymentReceiptPdf(Payment $payment)
     {
-        $payment->loadMissing(['student', 'bill.paymentType', 'bill.academicYear', 'recorder', 'receipt']);
+        $payment->loadMissing(['student.parentProfile', 'bill.paymentType', 'bill.academicYear', 'bill.billItems', 'recorder', 'receipt']);
 
         $receipt = $payment->receipt;
-        $receiptNumber = $receipt?->receipt_number ?? ($payment->payment_number ?? ('PAY-'.str_pad($payment->id, 6, '0', STR_PAD_LEFT)));
+        $receiptNumber = $receipt?->receipt_number ?? ($payment->payment_number ?? ('PAY-'.str_pad((string) $payment->id, 6, '0', STR_PAD_LEFT)));
         $printDate = now()->translatedFormat('d F Y');
 
         $pdf = Pdf::loadView('pdf.receipt', [
