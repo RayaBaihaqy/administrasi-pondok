@@ -226,7 +226,7 @@
 
         /* Signature Section */
         .signature-table {
-            margin-top: 36px;
+            margin-top: 55px;
             margin-left: auto;
             margin-right: 0;
             border-collapse: collapse;
