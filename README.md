@@ -1,6 +1,6 @@
-# 🕌 Sistem Informasi Administrasi & Pembayaran Yayasan Perguruan Islam Miftahul 'Ulum
+# 🕌 Sistem Informasi Administrasi & Pembayaran MTs. Miftahul 'Ulum
 
-Sistem Informasi Manajemen Penagihan, Pembayaran Online (Midtrans) & Kasir Offline, Rekapitulasi Laporan Keuangan, Invoice & Kuitansi PDF Resmi Berstempel, Integrasi WhatsApp, serta Portal Wali Siswa terpadu untuk **Yayasan Perguruan Islam Miftahul 'Ulum (Jenjang MTs. Miftahul 'Ulum)**.
+Sistem Informasi Manajemen Penagihan, Pembayaran Online (Midtrans) & Kasir Offline, Rekapitulasi Laporan Keuangan, Invoice & Kuitansi PDF Resmi Berstempel, Integrasi Notifikasi WhatsApp, serta Portal Wali Siswa terpadu untuk **Yayasan Perguruan Islam Miftahul 'Ulum (Jenjang MTs. Miftahul 'Ulum)**.
 
 Sistem ini dibangun dengan arsitektur **Modular Monolith Enterprise** menggunakan **Laravel 12**, **Filament v5**, **Livewire 3**, **Midtrans Payment Gateway API**, dan **DomPDF Engine**.
 
@@ -8,15 +8,17 @@ Sistem ini dibangun dengan arsitektur **Modular Monolith Enterprise** menggunaka
 
 ## 📋 Daftar Isi
 1. [Spesifikasi & Tech Stack](#-spesifikasi--tech-stack)
-2. [Fitur Utama & Keunggulan Sistem](#-fitur-utama--keunggulan-sistem)
-3. [Format Penomoran Dokumen & File](#-format-penomoran-dokumen--file)
-4. [Akses Panel & Kredensial Login Demo](#-akses-panel--kredensial-login-demo)
-5. [Struktur Direktori & Penjelasan Lengkap Setiap File](#-struktur-direktori--penjelasan-lengkap-setiap-file)
-6. [Skema Basis Data (18 Tabel Utama)](#-skema-basis-data-18-tabel-utama)
-7. [Alur Logika Bisnis & Fitur Unggulan](#-alur-logika-bisnis--fitur-unggulan)
-8. [Panduan Instalasi & Pengoperasian](#-panduan-instalasi--pengoperasian)
-9. [Perintah Artisan (CLI Commands)](#-perintah-artisan-cli-commands)
-10. [Pengujian Otomatis (PHPUnit Test Suite)](#-pengujian-otomatis-phpunit-test-suite)
+2. [Profil Lembaga & Rekening Resmi Madrasah](#-profil-lembaga--rekening-resmi-madrasah)
+3. [Fitur Utama & Keunggulan Sistem](#-fitur-utama--keunggulan-sistem)
+4. [Sistem Pembayaran Cicilan (Sistem A)](#-sistem-pembayaran-cicilan-sistem-a)
+5. [Standar Dokumen Invoice & Kuitansi PDF](#-standar-dokumen-invoice--kuitansi-pdf)
+6. [Format Penomoran Dokumen & File](#-format-penomoran-dokumen--file)
+7. [Akses Panel & Kredensial Login Demo](#-akses-panel--kredensial-login-demo)
+8. [Struktur Direktori & Penjelasan Lengkap File](#-struktur-direktori--penjelasan-lengkap-file)
+9. [Skema Basis Data (18 Tabel Utama)](#-skema-basis-data-18-tabel-utama)
+10. [Panduan Instalasi & Pengoperasian](#-panduan-instalasi--pengoperasian)
+11. [Perintah Artisan (CLI Commands)](#-perintah-artisan-cli-commands)
+12. [Pengujian Otomatis (PHPUnit Test Suite)](#-pengujian-otomatis-phpunit-test-suite)
 
 ---
 
@@ -32,7 +34,23 @@ Sistem ini dibangun dengan arsitektur **Modular Monolith Enterprise** menggunaka
 | **PDF Document** | DomPDF | `^3.1` | Generasi Invoice, Kuitansi Berstempel & Rekapitulasi PDF |
 | **Spreadsheet System**| Pure RFC-4180 CSV | Standard | Export/Import Data Siswa dengan UTF-8 BOM untuk MS Excel |
 | **Database** | MySQL | `>= 8.0` | Relational Database Storage dengan Indexing Optimal |
-| **Testing Suite** | PHPUnit | `^11.5` | Automated Unit & Feature Testing (19/19 Passing, 42 assertions - 100%) |
+| **Testing Suite** | PHPUnit | `^11.5` | Automated Unit & Feature Testing (19/19 Passing, 43 assertions - 100%) |
+
+---
+
+## 🏛 Profil Lembaga & Rekening Resmi Madrasah
+
+Seluruh identitas lembaga dan informasi rekening pembayaran terpusat pada file konfigurasi [`config/school.php`](config/school.php) dan dapat disesuaikan secara dinamis melalui file `.env`:
+
+| Parameter | Nilai Konfigurasi Default | Variabel Environment (`.env`) |
+|---|---|---|
+| **Nama Yayasan** | `YAYASAN PERGURUAN ISLAM MIFTAHUL 'ULUM` | `SCHOOL_NAME` |
+| **Nama Lembaga** | `MTs. MIFTAHUL 'ULUM` | `SCHOOL_INSTITUTION` |
+| **Alamat Lembaga** | `Jl. Raya Setu Kp. Cibuntu RT. 002/007 Desa Cibuntu Kec. Cibitung` | `SCHOOL_ADDRESS` |
+| **Bank Penerima** | `Bank BRI` | `SCHOOL_BANK_NAME` |
+| **Nomor Rekening** | `176901000210569` | `SCHOOL_BANK_ACCOUNT` |
+| **Atas Nama Rekening** | `Madrasah Tsanawiyah Miftahul Ulum` | `SCHOOL_BANK_HOLDER` |
+| **Nama Bendahara** | `Hj. Titi Nurhayati, S. Pd` | `SCHOOL_TREASURER_NAME` |
 
 ---
 
@@ -56,44 +74,77 @@ Sistem ini dibangun dengan arsitektur **Modular Monolith Enterprise** menggunaka
 4. **PAT (Penilaian Akhir Tahun Genap)**: Rp 150.000.
 5. **LDKS (Latihan Dasar Kepemimpinan Siswa)**: Khusus Kelas 7 — Rp 300.000.
 6. **ST (Studi Tour)**: Khusus Kelas 8 — Rp 750.000 (dapat dicicil).
-7. **AT (Kegiatan Akhir Tahun & Perpisahan)**: Khusus Kelas 9 — Rp 2.000.000 (*Smart preset cicilan 10x*).
+7. **AT (Kegiatan Akhir Tahun & Perpisahan)**: Khusus Kelas 9 — Rp 2.000.000 (*Skema cicilan Sistem A*).
 8. **Daftar Ulang**: Kenaikan Kelas 8 & 9 — Rp 500.000 (dapat dicicil).
-9. **Pendaftaran Siswa Baru (Uang Masuk)**: Khusus Kelas 7 — Rp 1.500.000 (*Smart preset cicilan 3x*).
+9. **Pendaftaran Siswa Baru**: Khusus Kelas 7 — Rp 1.500.000 (*Skema cicilan Sistem A*).
 
-### 3. Master Beasiswa Tunai Siswa (Cash Disbursement)
-* Modul Beasiswa dikonfigurasi sebagai **Bantuan Finansial Tunai Langsung** kepada siswa berprestasi / kurang mampu.
-* Nominal beasiswa dicairkan langsung secara fisik ke siswa/wali tanpa memotong tagihan SPP di sistem secara sepihak, menjaga integritas rekonsiliasi kas riil madrasah.
-
-### 4. Otomasi WhatsApp & 1-Klik Kirim Pesan (`wa.me`) dengan Dokumen PDF
+### 3. Otomasi WhatsApp & 1-Klik Kirim Pesan (`wa.me`) dengan Dokumen PDF
 * **100% Bebas Biaya Langganan Gateway**: Menggunakan integrasi URL generator resmi `https://wa.me/` yang langsung membuka aplikasi WhatsApp / WhatsApp Web.
 * **Tautan Dokumen PDF Resmi Berstempel**: Pesan notifikasi WhatsApp otomatis melampirkan tautan unduh dokumen PDF resmi (`/docs/invoice/{no}` untuk tagihan dan `/docs/receipt/{no}` untuk kuitansi sah), sehingga wali murid dapat langsung mengunduh/melihat dokumen berstempel dari HP atau PC.
-* **Format Pesan Berstandar Institusi**: Desain tipografi rapi, bullet point terstruktur (`•`), dan penanganan aman *multi-byte unicode* anti karakter rusak (*garbled text*).
+* **Format Pesan Berstandar Institusi**: Desain tipografi rapi, bullet point terstruktur (`•`), dan penanganan aman *multi-byte unicode*.
 * **Normalisasi Cerdas Nomor HP**: Otomatis mengonversi nomor berawalan `08xx`, `+628xx`, maupun `8xx` menjadi format standar internasional `628xx`.
 * **Pencatatan Log WhatsApp**: Log otomatis tersimpan di tabel `whatsapp_logs` untuk audit riwayat pengingat tagihan H-2 jatuh tempo, notifikasi tagihan baru, dan konfirmasi bukti bayar lunas.
 
-### 5. Kelola Tagihan & Prioritas Pengurutan Cerdas
+### 4. Kelola Tagihan & Prioritas Pengurutan Cerdas
 * **Prioritas Pengurutan Status Urgensi**:
   1. 🔴 **Paling Atas: Status "Terlambat" (`overdue`)** — Memudahkan admin memprioritaskan penagihan siswa yang melewati batas jatuh tempo.
   2. 🟡 **Urutan Kedua: Status "Belum Lunas" (`unpaid`)** — Tagihan aktif yang belum jatuh tempo.
   3. 🟢 **Paling Bawah: Status "Lunas" (`paid`) & "Dibatalkan" (`cancelled`)**.
 * **Tombol "Generate Tagihan" Massal**:
   * Fleksibilitas target: *Semua Siswa Aktif*, *Per Angkatan / Tingkat Kelas*, atau *Per Rombel Spesifik*.
-  * Otomatis membaca matriks tarif resmi per tingkat kelas dan mendukung skema cicilan (Tenor).
+  * Otomatis membaca matriks tarif resmi per tingkat kelas dan mendukung skema cicilan.
   * Dilengkapi proteksi *Idempotency* mencegah tagihan ganda.
 
-### 6. Transisi Tahun Ajaran & Pengecualian Siswa Tinggal Kelas
+### 5. Transisi Tahun Ajaran & Pengecualian Siswa Tinggal Kelas
 * Tombol **"Tahun Ajaran Baru & Kenaikan Kelas"** di halaman Master Tahun Ajaran.
 * Dilengkapi *Repeater dinamis* dengan tombol **`+ Tambah Siswa Tinggal Kelas`** dan pencarian siswa yang dikelompokkan rapi per kategori (*Kelas 7, Kelas 8, Kelas 9*).
 * **Otomatisasi Sistem**:
   * Siswa normal: Kelas 7 ➡️ 8, Kelas 8 ➡️ 9, Kelas 9 ➡️ Lulus.
   * Siswa tinggal kelas: Mempertahankan tingkat kelasnya saat ini dan otomatis menerbitkan tagihan Daftar Ulang sesuai tingkatannya.
 
-### 7. Download Template & Import Excel Data Siswa Massal
+### 6. Download Template & Import Excel Data Siswa Massal
 * Tombol **`Download Template`**: Menghasilkan file spreadsheet `.csv` dengan *UTF-8 BOM* (langsung rapi saat dibuka di Microsoft Excel) lengkap dengan 16 kolom data pokok siswa & wali murid serta 2 baris contoh pengisian.
 * Tombol **`Import Excel`**: Mengunggah spreadsheet yang telah diisi, secara otomatis mendaftarkan data siswa, profil wali, akun login portal, serta penempatan kelas di tahun ajaran aktif.
 
-### 8. Dokumen PDF Resmi Berstempel & TTD Digital
-* **Invoice PDF & Kuitansi PDF Resmi**: Dibuat menggunakan DomPDF Engine dengan layout presisi, kop surat resmi Yayasan Miftahul 'Ulum, stempel resmi yayasan, dan tanda tangan digital Bendahara.
+---
+
+## 💳 Sistem Pembayaran Cicilan (Sistem A)
+
+Sistem menerapkan arsitektur **Sistem A (*Single Master Bill with Incremental Partial Payments*)** untuk menangani pembayaran berseri atau cicilan bertahap (seperti Pendaftaran Siswa Baru dan Kegiatan Akhir Tahun):
+
+1. **Satu Tagihan Induk (*Master Bill*)**:
+   - Dibuat 1 baris tagihan dengan nominal penuh (contoh: Pendaftaran Rp 1.500.000 atau Akhir Tahun Rp 2.000.000).
+2. **Pencatatan Riwayat Pembayaran Bertahap**:
+   - Setiap kali wali murid mencicil (misal Rp 500.000), sistem membuat record pembayaran baru (`Payment`) yang terhubung langsung ke tagihan induk tersebut.
+   - Status tagihan otomatis menghitung ulang `paid_amount` (total yang sudah dibayar) dan `outstanding_amount` (sisa tagihan).
+3. **Kalkulasi Akurat pada Kuitansi Pembayaran ([receipt.blade.php](resources/views/pdf/receipt.blade.php))**:
+   - **Nominal Diterima:** Jumlah yang dibayarkan pada transaksi kuitansi tersebut (misal: **Rp 500.000**).
+   - **Total Tagihan:** Menampilkan nominal penuh tagihan induk (misal: **Rp 2.000.000**).
+   - **Akumulasi Pembayaran:** Total pembayaran yang telah disetorkan sampai transaksi tersebut dicetak (misal cicilan ke-2 ➡️ **Rp 1.000.000**).
+   - **Sisa Tagihan:** Sisa kewajiban yang belum terbayar (misal: **Rp 1.000.000**, dan menjadi **Rp 0** jika sudah lunas).
+
+---
+
+## 📄 Standar Dokumen Invoice & Kuitansi PDF
+
+Dokumen Invoice dan Kuitansi dirancang menggunakan DomPDF dengan standar tata letak resmi:
+
+1. **Kop Surat Standar Madrasah**:
+   - Logo madrasah resmi di sebelah kiri.
+   - Teks Yayasan: `YAYASAN PERGURUAN ISLAM MIFTAHUL 'ULUM`.
+   - Teks Lembaga: `MTs. MIFTAHUL 'ULUM`.
+   - Alamat lengkap: `Jl. Raya Setu Kp. Cibuntu RT. 002/007 Desa Cibuntu Kec. Cibitung`.
+   - Badge Status: `LUNAS` (warna hijau), `BELUM LUNAS` (warna kuning), `TERLAMBAT` (warna merah).
+2. **Tabel Data Pokok & Transaksi**:
+   - Label identitas siswa: `NISN` (tanpa NIS).
+   - Waktu pembayaran pada kuitansi: `d F Y H:i:s WIB` (lengkap hingga detik).
+   - Tipografi standar `Helvetica, Arial, sans-serif`.
+3. **Petunjuk Pembayaran Transfer Bank (Pada Invoice)**:
+   - Menampilkan rekening resmi **Bank BRI `176901000210569`** A/N **`Madrasah Tsanawiyah Miftahul Ulum`**.
+4. **Tata Letak Tanda Tangan & Akumulasi**:
+   - Tanda tangan digital Bendahara (`height: 80px`) ditata rapi mepet rata kanan (*flush right* dengan lebar `210px`).
+   - Jarak atas (*margin-top*) diset `135px` dari container hijau untuk estetika tata letak dokumen yang leluasa.
+   - Tanpa garis footer abu-abu sistem di bagian bawah.
 
 ---
 
@@ -102,7 +153,7 @@ Sistem ini dibangun dengan arsitektur **Modular Monolith Enterprise** menggunaka
 | Jenis Dokumen | Format Nomor Transaksi | Contoh Nomor | Nama File Download PDF |
 |---|---|---|---|
 | **Tagihan Reguler (Single)** | `INV-{NIS}-{PERIODE}-{RANDOM}` | `INV-3144228827-202608-A1B2` | `INV-3144228827-202608-A1B2.pdf` |
-| **Tagihan Cicilan (Tenor)** | `INV-{NIS}-{KODE_JENIS}-{INDEX}` | `INV-3144228827-AT-01` | `INV-3144228827-AT-01.pdf` |
+| **Tagihan Cicilan (Master)** | `INV-{NIS}-{KODE_JENIS}` | `INV-3144228827-PENDAFTARAN` | `INV-3144228827-PENDAFTARAN.pdf` |
 | **Pembayaran Manual / Kasir** | `PAY-MANUAL-{NIS}-{KODE_JENIS}-{INDEX}` | `PAY-MANUAL-3144228827-AT-01` | `PAY-MANUAL-3144228827-AT-01.pdf` |
 | **Pembayaran Online (Midtrans)**| `PAY-ONLINE-{NIS}-{KODE_JENIS}-{INDEX}` | `PAY-ONLINE-3144228827-AT-01` | `PAY-ONLINE-3144228827-AT-01.pdf` |
 
@@ -119,7 +170,7 @@ Sistem ini dibangun dengan arsitektur **Modular Monolith Enterprise** menggunaka
 
 ---
 
-## 📁 Struktur Direktori & Penjelasan Lengkap Setiap File
+## 📁 Struktur Direktori & Penjelasan Lengkap File
 
 ```
 administrasi-pondok/
@@ -151,7 +202,7 @@ administrasi-pondok/
 │   │   ├── Resources/                           # Resources Panel Admin Staff (/admin)
 │   │   │   ├── AcademicYearResource.php         # Master Tahun Ajaran, Kenaikan Kelas, & Pengecualian Tinggal Kelas
 │   │   │   ├── AuditLogResource.php             # Jejak aktivitas sistem dan mutasi data (Khusus Super Admin)
-│   │   │   ├── BillResource.php                 # Kelola Tagihan, Generate Tagihan Massal (All/Angkatan/Rombel), Kasir Bayar, & Kirim WA
+│   │   │   ├── BillResource.php                 # Kelola Tagihan, Generate Tagihan Massal, Kasir Bayar, & Kirim WA
 │   │   │   ├── ParentResource.php               # Data Master Profil Orang Tua / Wali Murid
 │   │   │   ├── PaymentResource.php              # Log Transaksi Pembayaran + Unduh Kuitansi PDF Resmi + Kirim WA
 │   │   │   ├── PaymentTypeResource.php          # Master 9 Jenis Pembayaran MTs & Konfigurasi Tarif per Kelas
@@ -173,7 +224,7 @@ administrasi-pondok/
 │   │
 │   ├── Http/
 │   │   └── Controllers/
-│   │       ├── DocumentController.php            # Controller unduh Invoice & Kuitansi PDF resmi via link publik (/docs/...)
+│   │       ├── DocumentController.php           # Controller unduh Invoice & Kuitansi PDF resmi via link publik (/docs/...)
 │   │       └── PaymentController.php            # Endpoint Webhook Callback Midtrans (Verifikasi SHA512 Signature)
 │   │
 │   ├── Models/                                  # Eloquent Models & Aturan Bisnis Basis Data
@@ -213,11 +264,14 @@ administrasi-pondok/
 │       ├── StudentImportService.php             # Layanan download template & parser import massal data siswa
 │       └── WhatsAppAutomationService.php        # Layanan generator teks pesan resmi wa.me & logger WhatsApp
 │
+├── config/
+│   └── school.php                               # Master Konfigurasi Identitas Lembaga & Rekening BRI MTs
+│
 ├── database/
 │   ├── migrations/                              # 22 File Migrasi Skema Basis Data
 │   └── seeders/
 │       ├── AcademicYearSeeder.php               # Seeder Tahun Ajaran 2026/2027 Aktif
-│       ├── BillSeeder.php                       # Seeder Tagihan SPP & Non-SPP untuk demo
+│       ├── BillSeeder.php                       # Seeder Tagihan SPP & Non-SPP (Sistem A Cicilan) untuk demo
 │       ├── DatabaseSeeder.php                   # Master Seeder Orchestrator
 │       ├── PaymentTypeSeeder.php                # Seeder 9 Master Jenis Pembayaran Resmi MTs
 │       └── UserSeeder.php                       # Seeder Akun Staff & 241 Siswa Aktif Lengkap dengan Akun Wali
@@ -268,13 +322,13 @@ administrasi-pondok/
 3. **`students`**: Data pokok siswa (`nis`, `nism`, `full_name`, `gender`, `class_level`, `rombel`, `status`).
 4. **`academic_years`**: Master tahun ajaran akademik (e.g., 2026/2027) & status aktif.
 5. **`student_academic_years`**: Riwayat riil penempatan kelas dan rombel siswa per tahun ajaran.
-6. **`payment_types`**: Master jenis pembayaran (SPP, PTS, PAS, PAT, LDKS, ST, AT, Daftar Ulang, Uang Masuk).
+6. **`payment_types`**: Master 9 jenis pembayaran (SPP, PTS, PAS, PAT, LDKS, ST, AT, Daftar Ulang, Pendaftaran Baru).
 7. **`payment_type_prices`**: Matriks penetapan harga tarif per tingkat kelas dan rombel.
 8. **`student_payment_overrides`**: Master beasiswa tunai siswa.
 9. **`payment_due_date_overrides`**: Master penyesuaian khusus tanggal jatuh tempo.
 10. **`bills`**: Master data tagihan siswa (`amount`, `paid_amount`, `outstanding_amount`, `status`, `due_date`).
 11. **`bill_items`**: Rincian sub-item pada sebuah tagihan.
-12. **`payments`**: Transaksi pembayaran yang tercatat (`paid_amount`, `method`, `status`, `paid_at`).
+12. **`payments`**: Transaksi pembayaran yang tercatat (`amount`, `method`, `status`, `paid_at`).
 13. **`payment_gateway_transactions`**: Log mentah respons payload dari Midtrans Webhook.
 14. **`payment_evidences`**: Berkas bukti transfer untuk verifikasi manual kasir.
 15. **`invoices`**: Arsip nomor dan metadata invoice tagihan.
@@ -377,8 +431,8 @@ php artisan test
    PASS  Tests\Unit\WhatsAppAutomationServiceTest (3 tests)
    PASS  Tests\Feature\ExampleTest (1 test)
 
-  Tests:    19 passed (42 assertions)
-  Duration: ~3.00s (100% Success)
+  Tests:    19 passed (43 assertions)
+  Duration: ~6.00s (100% Success)
 ```
 
 ---
