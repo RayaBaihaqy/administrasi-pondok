@@ -45,7 +45,7 @@ class WhatsAppAutomationService
             ."• *Nominal Dibayar:* *Rp ".number_format($amount, 0, ',', '.')."*\n"
             ."• *Metode Bayar:* {$methodLabel} ({$sourceLabel})\n"
             ."• *Waktu Transaksi:* {$paidDateStr} WIB\n"
-            ."• *Status:* *LUNAS (SAH)*\n\n"
+            ."• *Status:* *LUNAS*\n\n"
             ."📄 *Unduh Kuitansi PDF Resmi Berstempel:*\n"
             ."{$receiptPdfUrl}\n\n"
             ."Terima kasih atas partisipasi dan kerja sama Bapak/Ibu dalam mendukung pendidikan putra/putri tercinta.\n\n"

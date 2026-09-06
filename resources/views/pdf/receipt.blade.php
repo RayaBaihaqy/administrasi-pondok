@@ -258,10 +258,10 @@
             </td>
             <td class="kop-meta">
                 <div class="doc-type-title">KUITANSI PEMBAYARAN</div>
-                <div class="doc-date">Tanggal: {{ \Carbon\Carbon::parse($payment->paid_at ?? now())->translatedFormat('d F Y H:i') }} WIB</div>
+                <div class="doc-date">Tanggal: {{ \Carbon\Carbon::parse($payment->paid_at ?? now())->translatedFormat('d F Y') }}</div>
                 <div>
                     <span class="status-badge status-paid">
-                        LUNAS (SAH)
+                        LUNAS
                     </span>
                 </div>
             </td>
