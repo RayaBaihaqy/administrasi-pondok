@@ -236,23 +236,13 @@
         /* Signature Section */
         .signature-table {
             width: 100%;
-            margin-top: 15px;
+            margin-top: 28px;
             border-collapse: collapse;
         }
         .signature-cell {
             text-align: center;
             font-size: 11px;
             vertical-align: bottom;
-        }
-
-        /* Footer */
-        .doc-footer {
-            margin-top: 25px;
-            font-size: 10px;
-            color: #888888;
-            text-align: center;
-            border-top: 1px solid #eeeeee;
-            padding-top: 8px;
         }
     </style>
 </head>
@@ -421,16 +411,16 @@
             <table class="signature-table">
                 <tr>
                     <td class="signature-cell">
-                        <div style="color: #666; font-size: 10px;">Cibitung, {{ \Carbon\Carbon::parse($bill->billing_date)->translatedFormat('d F Y') }}</div>
-                        <div style="font-weight: bold; margin-top: 2px;">Bendahara MTs Miftahul 'Ulum,</div>
+                        <div style="color: #666; font-size: 10.5px;">Cibitung, {{ \Carbon\Carbon::parse($bill->billing_date)->translatedFormat('d F Y') }}</div>
+                        <div style="font-weight: bold; margin-top: 3px;">Bendahara MTs Miftahul 'Ulum,</div>
                         @php
                             $sigPath = public_path('images/signature.png');
                             $sigBase64 = file_exists($sigPath) ? 'data:image/png;base64,' . base64_encode(file_get_contents($sigPath)) : null;
                         @endphp
                         @if($sigBase64)
-                            <img src="{{ $sigBase64 }}" style="height: 48px; margin: 2px 0;" alt="Tanda Tangan"><br>
+                            <img src="{{ $sigBase64 }}" style="height: 62px; margin: 4px 0;" alt="Tanda Tangan"><br>
                         @else
-                            <div style="height: 48px;"></div>
+                            <div style="height: 62px;"></div>
                         @endif
                         <strong>{{ config('school.treasurer_name', 'Hj. Titi Nurhayati, S. Pd') }}</strong>
                     </td>
@@ -439,11 +429,6 @@
         </td>
     </tr>
 </table>
-
-<!-- Footer Sistem -->
-<div class="doc-footer">
-    Dokumen ini diterbitkan secara otomatis dan sah melalui Sistem Informasi Administrasi MTs Miftahul 'Ulum Cibitung.
-</div>
 
 </body>
 </html>
