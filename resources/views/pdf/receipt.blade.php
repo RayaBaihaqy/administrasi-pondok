@@ -258,7 +258,6 @@
             </td>
             <td class="kop-meta">
                 <div class="doc-type-title">KUITANSI PEMBAYARAN</div>
-                <div class="doc-date">Tanggal: {{ \Carbon\Carbon::parse($payment->paid_at ?? now())->translatedFormat('d F Y') }}</div>
                 <div>
                     <span class="status-badge status-paid">
                         LUNAS
@@ -319,7 +318,7 @@
                         <td class="info-value">{{ strtoupper($payment->method ?? $payment->source ?? 'TUNAI') }} ({{ \App\Models\Payment::SOURCES[$payment->source] ?? 'Loket Kasir' }})</td>
                     </tr>
                     <tr>
-                        <td class="info-label">Waktu Bayar</td>
+                        <td class="info-label">Tanggal Bayar</td>
                         <td>:</td>
                         <td class="info-value">{{ \Carbon\Carbon::parse($payment->paid_at ?? now())->translatedFormat('d F Y H:i') }} WIB</td>
                     </tr>

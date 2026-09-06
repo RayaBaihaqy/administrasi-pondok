@@ -267,7 +267,6 @@
             </td>
             <td class="kop-meta">
                 <div class="doc-type-title">INVOICE TAGIHAN</div>
-                <div class="doc-date">Tanggal: {{ \Carbon\Carbon::parse($bill->billing_date)->translatedFormat('d F Y') }}</div>
                 <div>
                     <span class="status-badge status-{{ $bill->status }}">
                         {{ match($bill->status) {
@@ -321,6 +320,11 @@
                         <td class="info-label">No. Invoice</td>
                         <td>:</td>
                         <td class="info-value">{{ $bill->bill_number }}</td>
+                    </tr>
+                    <tr>
+                        <td class="info-label">Tanggal Tagihan</td>
+                        <td>:</td>
+                        <td class="info-value">{{ \Carbon\Carbon::parse($bill->billing_date)->translatedFormat('d F Y') }}</td>
                     </tr>
                     <tr>
                         <td class="info-label">Jenis Tagihan</td>
