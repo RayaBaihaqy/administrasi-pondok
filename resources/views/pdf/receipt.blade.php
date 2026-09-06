@@ -226,14 +226,17 @@
 
         /* Signature Section */
         .signature-table {
-            width: 100%;
-            margin-top: 28px;
+            margin-top: 36px;
+            margin-left: auto;
+            margin-right: 0;
             border-collapse: collapse;
+            width: 210px;
         }
         .signature-cell {
             text-align: center;
             font-size: 11px;
             vertical-align: bottom;
+            padding: 0;
         }
     </style>
 </head>
@@ -281,7 +284,7 @@
                         <td class="info-value">{{ $payment->student?->full_name ?? '-' }}</td>
                     </tr>
                     <tr>
-                        <td class="info-label">NISN / NIS</td>
+                        <td class="info-label">NISN</td>
                         <td>:</td>
                         <td class="info-value">{{ $payment->student?->nis ?? '-' }}</td>
                     </tr>
@@ -405,7 +408,7 @@
             </div>
 
             <!-- Tanda Tangan -->
-            <table class="signature-table">
+            <table class="signature-table" align="right">
                 <tr>
                     <td class="signature-cell">
                         <div style="color: #666; font-size: 10.5px;">Cibitung, {{ \Carbon\Carbon::parse($payment->paid_at ?? now())->translatedFormat('d F Y') }}</div>
@@ -415,9 +418,9 @@
                             $sigBase64 = file_exists($sigPath) ? 'data:image/png;base64,' . base64_encode(file_get_contents($sigPath)) : null;
                         @endphp
                         @if($sigBase64)
-                            <img src="{{ $sigBase64 }}" style="height: 62px; margin: 4px 0;" alt="Tanda Tangan"><br>
+                            <img src="{{ $sigBase64 }}" style="height: 80px; margin: 4px 0;" alt="Tanda Tangan"><br>
                         @else
-                            <div style="height: 62px;"></div>
+                            <div style="height: 80px;"></div>
                         @endif
                         <strong>{{ $payment->recorder?->name ?? config('school.treasurer_name', 'Hj. Titi Nurhayati, S. Pd') }}</strong>
                     </td>
