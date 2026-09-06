@@ -147,122 +147,126 @@ class BillSeeder extends Seeder
             }
         }
 
-        // Tagihan Pendaftaran Siswa Baru (Uang Masuk Kelas 7 - Cicilan 3x)
+        // Tagihan Pendaftaran Siswa Baru (Model Cicilan Bertahap: 1 Tagihan Total Rp 1.500.000)
         if ($pendaftaranBaruType) {
             $class7Students = Student::where('class_level', 7)->get();
             foreach ($class7Students as $c7Student) {
                 $cleanNis = str_replace([' ', '-'], '', $c7Student->nis);
                 $totalEntry = 1500000;
-                $installmentPerMonth = 500000; // 3x cicilan
+                $installmentPerMonth = 500000; // 3x cicilan @ Rp 500.000
 
-                for ($t = 1; $t <= 3; $t++) {
-                    $tMonth = 6 + $t; // Juli, Agustus, September
-                    $tMonthStr = str_pad($tMonth, 2, '0', STR_PAD_LEFT);
-                    $tPeriod = "2026-{$tMonthStr}-01";
-                    $tDueDate = Carbon::parse($tPeriod)->endOfMonth()->format('Y-m-d'); // Akhir bulan
-                    $isTPaid = ($t <= 2); // Bulan 1 & 2 Lunas
+                // 1 Tagihan Utama bernilai penuh Rp 1.500.000
+                $bill = Bill::create([
+                    'student_id' => $c7Student->id,
+                    'parent_id' => $c7Student->parent_id,
+                    'payment_type_id' => $pendaftaranBaruType->id,
+                    'academic_year_id' => $academicYear->id,
+                    'bill_number' => 'INV-'.$cleanNis.'-PENDAFTARAN',
+                    'billing_period' => '2026-07-01',
+                    'billing_date' => '2026-07-15',
+                    'due_date' => '2026-09-30',
+                    'amount' => $totalEntry,
+                    'paid_amount' => 1000000, // Sudah dicicil 2x (Rp 1.000.000)
+                    'outstanding_amount' => 500000, // Sisa Rp 500.000
+                    'status' => Bill::STATUS_UNPAID,
+                    'notes' => 'Pendaftaran Siswa Baru MTs (Skema Cicilan 3x)',
+                ]);
 
-                    $bill = Bill::create([
-                        'student_id' => $c7Student->id,
-                        'parent_id' => $c7Student->parent_id,
-                        'payment_type_id' => $pendaftaranBaruType->id,
-                        'academic_year_id' => $academicYear->id,
-                        'bill_number' => 'INV-'.$cleanNis.'-PENDAFTARAN-'.str_pad($t, 2, '0', STR_PAD_LEFT),
-                        'billing_period' => $tPeriod,
-                        'billing_date' => '2026-07-15',
-                        'due_date' => $tDueDate,
-                        'amount' => $installmentPerMonth,
-                        'paid_amount' => $isTPaid ? $installmentPerMonth : 0,
-                        'outstanding_amount' => $isTPaid ? 0 : $installmentPerMonth,
-                        'status' => $isTPaid ? Bill::STATUS_PAID : Bill::STATUS_UNPAID,
-                        'notes' => "Cicilan {$t} dari 3 - Pendaftaran Siswa Baru MTs",
-                    ]);
+                BillItem::create([
+                    'bill_id' => $bill->id,
+                    'description' => 'Pendaftaran Siswa Baru (Total 3x Cicilan)',
+                    'quantity' => 1,
+                    'unit_price' => $totalEntry,
+                    'subtotal' => $totalEntry,
+                ]);
 
-                    BillItem::create([
-                        'bill_id' => $bill->id,
-                        'description' => "Pendaftaran Siswa Baru (Cicilan {$t}/3)",
-                        'quantity' => 1,
-                        'unit_price' => $installmentPerMonth,
-                        'subtotal' => $installmentPerMonth,
-                    ]);
+                // Cicilan 1 (Juli 2026)
+                Payment::create([
+                    'bill_id' => $bill->id,
+                    'student_id' => $c7Student->id,
+                    'parent_id' => $c7Student->parent_id,
+                    'recorded_by' => $admin->id,
+                    'payment_number' => Payment::generatePaymentNumberFromBill($bill, Payment::SOURCE_MANUAL).'-01',
+                    'amount' => $installmentPerMonth,
+                    'status' => Payment::STATUS_SUCCESS,
+                    'source' => Payment::SOURCE_MANUAL,
+                    'method' => 'bank_transfer',
+                    'notes' => 'Pembayaran Cicilan 1 dari 3 Pendaftaran Siswa Baru',
+                    'paid_at' => '2026-07-20 10:00:00',
+                    'created_at' => '2026-07-20 10:00:00',
+                    'updated_at' => '2026-07-20 10:00:00',
+                ]);
 
-                    if ($isTPaid) {
-                        Payment::create([
-                            'bill_id' => $bill->id,
-                            'student_id' => $c7Student->id,
-                            'parent_id' => $c7Student->parent_id,
-                            'recorded_by' => $admin->id,
-                            'payment_number' => Payment::generatePaymentNumberFromBill($bill, Payment::SOURCE_MANUAL),
-                            'amount' => $installmentPerMonth,
-                            'status' => Payment::STATUS_SUCCESS,
-                            'source' => Payment::SOURCE_MANUAL,
-                            'method' => 'bank_transfer',
-                            'notes' => "Pembayaran Cicilan {$t} dari 3 Pendaftaran Siswa Baru",
-                            'paid_at' => "2026-{$tMonthStr}-20 10:00:00",
-                            'created_at' => "2026-{$tMonthStr}-20 10:00:00",
-                            'updated_at' => "2026-{$tMonthStr}-20 10:00:00",
-                        ]);
-                    }
-                }
+                // Cicilan 2 (Agustus 2026)
+                Payment::create([
+                    'bill_id' => $bill->id,
+                    'student_id' => $c7Student->id,
+                    'parent_id' => $c7Student->parent_id,
+                    'recorded_by' => $admin->id,
+                    'payment_number' => Payment::generatePaymentNumberFromBill($bill, Payment::SOURCE_MANUAL).'-02',
+                    'amount' => $installmentPerMonth,
+                    'status' => Payment::STATUS_SUCCESS,
+                    'source' => Payment::SOURCE_MANUAL,
+                    'method' => 'bank_transfer',
+                    'notes' => 'Pembayaran Cicilan 2 dari 3 Pendaftaran Siswa Baru',
+                    'paid_at' => '2026-08-20 10:00:00',
+                    'created_at' => '2026-08-20 10:00:00',
+                    'updated_at' => '2026-08-20 10:00:00',
+                ]);
             }
         }
 
-        // Tagihan Akhir Tahun Kelas 9 (AT - Cicilan 10x)
+        // Tagihan Akhir Tahun Kelas 9 (AT - Model Cicilan Bertahap: 1 Tagihan Total Rp 2.000.000)
         if ($atType) {
             $class9Students = Student::where('class_level', 9)->take(5)->get();
             foreach ($class9Students as $c9Student) {
                 $cleanNis = str_replace([' ', '-'], '', $c9Student->nis);
-                $installmentAmount = 200000; // 10x cicilan dari Rp 2.000.000
+                $totalAt = 2000000;
+                $installmentAmount = 200000; // 10x cicilan @ Rp 200.000
 
-                for ($t = 1; $t <= 10; $t++) {
-                    $tMonth = (($t - 1) % 12) + 1;
-                    $tYear = ($t <= 6) ? 2026 : 2026;
-                    $tMonthStr = str_pad($tMonth, 2, '0', STR_PAD_LEFT);
-                    $tPeriod = "{$tYear}-{$tMonthStr}-01";
-                    $tDueDate = Carbon::parse($tPeriod)->endOfMonth()->format('Y-m-d');
-                    $isTPaid = ($t <= 6); // Cicilan 1-6 sudah terbayar
+                // 1 Tagihan Utama Rp 2.000.000
+                $bill = Bill::create([
+                    'student_id' => $c9Student->id,
+                    'parent_id' => $c9Student->parent_id,
+                    'payment_type_id' => $atType->id,
+                    'academic_year_id' => $academicYear->id,
+                    'bill_number' => 'INV-'.$cleanNis.'-AT',
+                    'billing_period' => '2026-01-01',
+                    'billing_date' => '2026-01-10',
+                    'due_date' => '2026-10-31',
+                    'amount' => $totalAt,
+                    'paid_amount' => 1200000, // 6x cicilan terbayar (Rp 1.200.000)
+                    'outstanding_amount' => 800000, // Sisa Rp 800.000
+                    'status' => Bill::STATUS_UNPAID,
+                    'notes' => 'Kegiatan Akhir Tahun & Tour Kelas 9 (Tenor 10x)',
+                ]);
 
-                    $bill = Bill::create([
+                BillItem::create([
+                    'bill_id' => $bill->id,
+                    'description' => 'Kegiatan Akhir Tahun & Tour Kelas 9',
+                    'quantity' => 1,
+                    'unit_price' => $totalAt,
+                    'subtotal' => $totalAt,
+                ]);
+
+                // 6x cicilan yang sudah terbayar
+                for ($t = 1; $t <= 6; $t++) {
+                    $tMonth = str_pad($t, 2, '0', STR_PAD_LEFT);
+                    Payment::create([
+                        'bill_id' => $bill->id,
                         'student_id' => $c9Student->id,
                         'parent_id' => $c9Student->parent_id,
-                        'payment_type_id' => $atType->id,
-                        'academic_year_id' => $academicYear->id,
-                        'bill_number' => 'INV-'.$cleanNis.'-AT-'.str_pad($t, 2, '0', STR_PAD_LEFT),
-                        'billing_period' => $tPeriod,
-                        'billing_date' => '2026-01-10',
-                        'due_date' => $tDueDate,
+                        'recorded_by' => $admin->id,
+                        'payment_number' => Payment::generatePaymentNumberFromBill($bill, Payment::SOURCE_MIDTRANS).'-'.str_pad($t, 2, '0', STR_PAD_LEFT),
                         'amount' => $installmentAmount,
-                        'paid_amount' => $isTPaid ? $installmentAmount : 0,
-                        'outstanding_amount' => $isTPaid ? 0 : $installmentAmount,
-                        'status' => $isTPaid ? Bill::STATUS_PAID : Bill::STATUS_UNPAID,
-                        'notes' => "Cicilan {$t} dari 10 - Kegiatan Akhir Tahun Kelas 9",
+                        'status' => Payment::STATUS_SUCCESS,
+                        'source' => Payment::SOURCE_MIDTRANS,
+                        'method' => 'qris',
+                        'notes' => "Pembayaran Cicilan {$t} dari 10 Akhir Tahun",
+                        'paid_at' => "2026-{$tMonth}-28 14:30:00",
+                        'created_at' => "2026-{$tMonth}-28 14:30:00",
+                        'updated_at' => "2026-{$tMonth}-28 14:30:00",
                     ]);
-
-                    BillItem::create([
-                        'bill_id' => $bill->id,
-                        'description' => "Kegiatan Akhir Tahun & Tour Kelas 9 (Cicilan {$t}/10)",
-                        'quantity' => 1,
-                        'unit_price' => $installmentAmount,
-                        'subtotal' => $installmentAmount,
-                    ]);
-
-                    if ($isTPaid) {
-                        Payment::create([
-                            'bill_id' => $bill->id,
-                            'student_id' => $c9Student->id,
-                            'parent_id' => $c9Student->parent_id,
-                            'recorded_by' => $admin->id,
-                            'payment_number' => Payment::generatePaymentNumberFromBill($bill, Payment::SOURCE_MIDTRANS),
-                            'amount' => $installmentAmount,
-                            'status' => Payment::STATUS_SUCCESS,
-                            'source' => Payment::SOURCE_MIDTRANS,
-                            'method' => 'qris',
-                            'notes' => "Pembayaran Cicilan {$t} dari 10 Akhir Tahun",
-                            'paid_at' => "2026-{$tMonthStr}-28 14:30:00",
-                            'created_at' => "2026-{$tMonthStr}-28 14:30:00",
-                            'updated_at' => "2026-{$tMonthStr}-28 14:30:00",
-                        ]);
-                    }
                 }
             }
         }

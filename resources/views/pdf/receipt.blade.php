@@ -366,18 +366,39 @@
         <td class="bottom-col-left">
             <div class="bill-status-box">
                 <div class="bill-status-title">Status Tagihan Terkait:</div>
+                @php
+                    $totalBillAmount = (int) ($payment->bill?->amount ?? $payment->amount);
+                    if ($payment->bill) {
+                        $accumulatedPaid = (int) $payment->bill->payments()
+                            ->where('status', \App\Models\Payment::STATUS_SUCCESS)
+                            ->where(function($q) use ($payment) {
+                                $q->where('paid_at', '<', $payment->paid_at)
+                                  ->orWhere(function($sub) use ($payment) {
+                                      $sub->where('paid_at', '=', $payment->paid_at)
+                                          ->where('id', '<=', $payment->id);
+                                  });
+                            })
+                            ->sum('amount');
+                        if ($accumulatedPaid == 0) {
+                            $accumulatedPaid = (int) $payment->amount;
+                        }
+                    } else {
+                        $accumulatedPaid = (int) $payment->amount;
+                    }
+                    $remainingOutstanding = max(0, $totalBillAmount - $accumulatedPaid);
+                @endphp
                 <table class="calculation-table">
                     <tr>
                         <td width="55%" style="color: #666;">Total Tagihan:</td>
-                        <td width="45%" class="text-right">Rp {{ number_format($payment->bill?->amount ?? $payment->amount, 0, ',', '.') }}</td>
+                        <td width="45%" class="text-right">Rp {{ number_format($totalBillAmount, 0, ',', '.') }}</td>
                     </tr>
                     <tr>
                         <td style="color: #666;">Akumulasi Pembayaran:</td>
-                        <td class="text-right" style="color: #2e7d32; font-weight: bold;">Rp {{ number_format($payment->bill?->paid_amount ?? $payment->amount, 0, ',', '.') }}</td>
+                        <td class="text-right" style="color: #2e7d32; font-weight: bold;">Rp {{ number_format($accumulatedPaid, 0, ',', '.') }}</td>
                     </tr>
                     <tr>
                         <td style="color: #666;">Sisa Tagihan:</td>
-                        <td class="text-right" style="color: #c62828; font-weight: bold;">Rp {{ number_format($payment->bill?->outstanding_amount ?? 0, 0, ',', '.') }}</td>
+                        <td class="text-right" style="color: {{ $remainingOutstanding > 0 ? '#c62828' : '#2e7d32' }}; font-weight: bold;">Rp {{ number_format($remainingOutstanding, 0, ',', '.') }}</td>
                     </tr>
                 </table>
                 <div style="font-size: 10px; color: #555; border-top: 1px dashed #c8e6c9; padding-top: 4px; margin-top: 4px;">
