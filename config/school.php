@@ -10,7 +10,6 @@ return [
     'institution' => env('SCHOOL_INSTITUTION', "MTs. Miftahul 'Ulum Cibitung"),
     'address' => env('SCHOOL_ADDRESS', 'Jl. Raya Setu Kp. Cibuntu RT. 002/007 Desa Cibuntu Kec. Cibitung'),
     'treasurer_name' => env('SCHOOL_TREASURER_NAME', 'Hj. Titi Nurhayati, S. Pd'),
-    'treasurer_phone' => env('SCHOOL_TREASURER_PHONE', '081234567890'),
 
     /*
     |--------------------------------------------------------------------------
