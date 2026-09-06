@@ -4,9 +4,14 @@
     <meta charset="UTF-8">
     <title>INVOICE - {{ $bill->bill_number }}</title>
     <style>
-        * { box-sizing: border-box; }
+        * {
+            box-sizing: border-box;
+            font-family: 'Helvetica', 'Arial', sans-serif !important;
+        }
+        body, table, tr, td, th, div, span, p, strong, b, h1, h2, h3, h4, em {
+            font-family: 'Helvetica', 'Arial', sans-serif !important;
+        }
         body {
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
             font-size: 12px;
             color: #2d3748;
             line-height: 1.45;
@@ -143,7 +148,7 @@
         }
         .info-value {
             color: #2d3748;
-            font-weight: 500;
+            font-size: 11px;
         }
 
         /* Items / Data Table */
@@ -292,7 +297,7 @@
                     <tr>
                         <td class="info-label">Wali Siswa</td>
                         <td>:</td>
-                        <td class="info-value"><strong>{{ $bill->parentProfile?->full_name ?? '-' }}</strong></td>
+                        <td class="info-value">{{ $bill->parentProfile?->full_name ?? '-' }}</td>
                     </tr>
                     <tr>
                         <td class="info-label">Nama Siswa</td>
