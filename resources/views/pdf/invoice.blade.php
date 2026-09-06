@@ -267,7 +267,6 @@
             </td>
             <td class="kop-meta">
                 <div class="doc-type-title">INVOICE TAGIHAN</div>
-                <div class="doc-number">{{ $bill->bill_number }}</div>
                 <div class="doc-date">Tanggal: {{ \Carbon\Carbon::parse($bill->billing_date)->translatedFormat('d F Y') }}</div>
                 <div>
                     <span class="status-badge status-{{ $bill->status }}">

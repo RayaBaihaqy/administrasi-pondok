@@ -258,7 +258,6 @@
             </td>
             <td class="kop-meta">
                 <div class="doc-type-title">KUITANSI PEMBAYARAN</div>
-                <div class="doc-number">{{ $payment->payment_number ?? $receiptNumber }}</div>
                 <div class="doc-date">Tanggal: {{ \Carbon\Carbon::parse($payment->paid_at ?? now())->translatedFormat('d F Y H:i') }} WIB</div>
                 <div>
                     <span class="status-badge status-paid">
