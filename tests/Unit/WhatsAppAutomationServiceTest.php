@@ -91,5 +91,6 @@ class WhatsAppAutomationServiceTest extends TestCase
         $this->assertStringContainsString('Bapak Ahmad Ridwan', $data['message']);
         $this->assertStringContainsString('Ananda Fatih', $data['message']);
         $this->assertStringContainsString('/docs/invoice/', $data['message']);
+        $this->assertStringContainsString('Bank BRI', $data['message']);
     }
 }

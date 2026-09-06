@@ -97,11 +97,16 @@
     <tr>
         <td width="50%" style="vertical-align: top;">
             <div style="background-color: #f5f5f5; padding: 12px; border-radius: 4px; font-size: 11px;">
-                <strong>Petunjuk Pembayaran:</strong>
-                <ol style="margin-left: 15px; margin-top: 5px; padding-left: 0;">
-                    <li>Pembayaran dapat dilakukan melalui portal online (Midtrans).</li>
-                    <li>Atau secara tunai / transfer via kantor bendahara pondok.</li>
-                    <li>Harap melakukan pembayaran sebelum tanggal jatuh tempo.</li>
+                <strong>Petunjuk Pembayaran Transfer Bank:</strong>
+                <div style="margin-top: 5px; padding: 8px; background-color: #ffffff; border: 1px solid #e0e0e0; border-radius: 3px;">
+                    <div>• <strong>Bank:</strong> {{ config('school.bank_name', 'Bank BRI') }}</div>
+                    <div>• <strong>No. Rekening:</strong> <span style="font-family: monospace; font-size: 12px; font-weight: bold; color: #1b5e20;">{{ config('school.bank_account') }}</span></div>
+                    <div>• <strong>Atas Nama:</strong> {{ config('school.bank_holder', 'Madrasah Tsanawiyah Miftahul Ulum') }}</div>
+                </div>
+                <ol style="margin-left: 15px; margin-top: 6px; padding-left: 0; color: #555;">
+                    <li>Pembayaran dapat dilakukan via transfer Bank / m-Banking atau Portal Online.</li>
+                    <li>Sertakan berita transfer: <em>{{ $bill->bill_number }}</em> / <em>{{ $bill->student?->full_name }}</em>.</li>
+                    <li>Konfirmasi bukti pembayaran ke Bendahara / Loket Madrasah.</li>
                 </ol>
             </div>
         </td>

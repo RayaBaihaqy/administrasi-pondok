@@ -36,9 +36,15 @@ class ParentOverviewWidget extends BaseWidget
                 ->color($totalUnpaid > 0 ? 'danger' : 'success'),
 
             Stat::make('Anak Terdaftar', $childrenCount.' Siswa')
-                ->description('Putra/Putri aktif di MTs Miftahul \'Ulum')
+                ->description('Putra/Putri aktif di madrasah')
                 ->descriptionIcon('heroicon-m-academic-cap')
                 ->color('info'),
+
+            Stat::make('Rekening Resmi MTs', (string) config('school.bank_name', 'Bank BRI'))
+                ->value((string) config('school.bank_account', '-'))
+                ->description('A/N '.(string) config('school.bank_holder', 'Madrasah Tsanawiyah Miftahul Ulum'))
+                ->descriptionIcon('heroicon-m-building-library')
+                ->color('primary'),
         ];
     }
 }

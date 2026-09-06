@@ -99,6 +99,10 @@ class WhatsAppAutomationService
         $periodStr = $bill->billing_period ? Carbon::parse($bill->billing_period)->translatedFormat('F Y') : '-';
         $invoicePdfUrl = url('/docs/invoice/'.$bill->bill_number);
 
+        $bankName = config('school.bank_name', 'Bank BRI');
+        $bankAccount = config('school.bank_account', '-');
+        $bankHolder = config('school.bank_holder', 'Madrasah Tsanawiyah Miftahul Ulum');
+
         $msg = "==============================\n"
             ."*YAYASAN PERGURUAN ISLAM MIFTAHUL 'ULUM*\n"
             ."*MTs. MIFTAHUL 'ULUM CIBITUNG*\n"
@@ -116,9 +120,12 @@ class WhatsAppAutomationService
             ."• *Periode:* {$periodStr}\n"
             ."• *Sisa Tagihan:* *Rp ".number_format($amount, 0, ',', '.')."*\n"
             ."• *Batas Jatuh Tempo:* *{$dueDateStr}*\n\n"
-            ."💳 *Cara Pembayaran:* \n"
-            ."1. Online via Portal Wali Siswa (Midtrans / QRIS / Transfer).\n"
-            ."2. Langsung melalui loket kantor Bendahara MTs Miftahul 'Ulum.\n\n"
+            ."💳 *Pilihan Pembayaran Transfer Bank:*\n"
+            ."• *Bank:* {$bankName}\n"
+            ."• *No. Rekening:* `{$bankAccount}`\n"
+            ."• *A/N:* {$bankHolder}\n"
+            ."_(Sertakan berita transfer: {$bill->bill_number})_\n\n"
+            ."Atau bayar via *Portal Online / Loket Bendahara*.\n\n"
             ."📄 *Unduh Invoice Tagihan PDF Resmi:*\n"
             ."{$invoicePdfUrl}\n\n"
             ."Mohon untuk melakukan pembayaran sebelum tanggal jatuh tempo. Terima kasih atas perhatian Bapak/Ibu.\n\n"
@@ -171,6 +178,10 @@ class WhatsAppAutomationService
         $periodStr = $bill->billing_period ? Carbon::parse($bill->billing_period)->translatedFormat('F Y') : '-';
         $invoicePdfUrl = url('/docs/invoice/'.$bill->bill_number);
 
+        $bankName = config('school.bank_name', 'Bank BRI');
+        $bankAccount = config('school.bank_account', '-');
+        $bankHolder = config('school.bank_holder', 'Madrasah Tsanawiyah Miftahul Ulum');
+
         $msg = "==============================\n"
             ."*YAYASAN PERGURUAN ISLAM MIFTAHUL 'ULUM*\n"
             ."*MTs. MIFTAHUL 'ULUM CIBITUNG*\n"
@@ -188,9 +199,12 @@ class WhatsAppAutomationService
             ."• *Periode Tagihan:* {$periodStr}\n"
             ."• *Total Tagihan:* *Rp ".number_format($amount, 0, ',', '.')."*\n"
             ."• *Batas Jatuh Tempo:* *{$dueDateStr}*\n\n"
-            ."💳 *Pilihan Metode Pembayaran:*\n"
-            ."1. *Online:* Login ke Portal Wali Siswa untuk bayar instan via Midtrans (QRIS / Transfer Bank / E-Wallet).\n"
-            ."2. *Offline:* Melalui loket kantor Bendahara MTs Miftahul 'Ulum.\n\n"
+            ."💳 *Pilihan Pembayaran Transfer Bank:*\n"
+            ."• *Bank:* {$bankName}\n"
+            ."• *No. Rekening:* `{$bankAccount}`\n"
+            ."• *A/N:* {$bankHolder}\n"
+            ."_(Sertakan berita transfer: {$bill->bill_number})_\n\n"
+            ."Atau bayar via *Portal Online / Loket Bendahara*.\n\n"
             ."📄 *Unduh Invoice Tagihan PDF Resmi:*\n"
             ."{$invoicePdfUrl}\n\n"
             ."_Mohon untuk melakukan penyelesaian sebelum tanggal jatuh tempo. Terima kasih atas perhatian dan kerja sama Bapak/Ibu._\n\n"
