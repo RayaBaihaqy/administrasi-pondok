@@ -344,7 +344,7 @@
                     <tr>
                         <td class="info-label">Jatuh Tempo</td>
                         <td>:</td>
-                        <td class="info-value"><strong style="color: #c62828;">{{ \Carbon\Carbon::parse($bill->due_date)->translatedFormat('d F Y') }}</strong></td>
+                        <td class="info-value"><strong style="color: {{ match($bill->status) { 'paid' => '#2e7d32', 'overdue' => '#c62828', default => '#f57f17' } }};">{{ \Carbon\Carbon::parse($bill->due_date)->translatedFormat('d F Y') }}</strong></td>
                     </tr>
                 </table>
             </div>
@@ -386,7 +386,7 @@
     <tr>
         <td class="bottom-col-left">
             <div class="payment-guide-box">
-                <div class="payment-guide-title">💳 Petunjuk Pembayaran Transfer Bank:</div>
+                <div class="payment-guide-title">Petunjuk Pembayaran Transfer Bank:</div>
                 <div class="bank-details-card">
                     <div>• <strong>Bank:</strong> {{ config('school.bank_name', 'Bank BRI') }}</div>
                     <div>• <strong>No. Rekening:</strong> <span style="font-family: monospace; font-size: 11.5px; font-weight: bold; color: #1b5e20;">{{ config('school.bank_account') }}</span></div>
@@ -394,8 +394,7 @@
                 </div>
                 <div style="font-size: 10px; color: #555; line-height: 1.4;">
                     1. Pembayaran dapat melalui transfer m-Banking / ATM atau Portal Online.<br>
-                    2. Cantumkan berita transfer: <strong>{{ $bill->bill_number }}</strong>.<br>
-                    3. Harap menyelesaikan pembayaran sebelum batas jatuh tempo.
+                    2. Harap menyelesaikan pembayaran sebelum batas jatuh tempo.
                 </div>
             </div>
         </td>
