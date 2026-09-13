@@ -350,7 +350,7 @@ class DocumentService
         $billsQuery = Bill::query()
             ->whereIn('status', [Bill::STATUS_UNPAID, Bill::STATUS_OVERDUE])
             ->whereNull('deleted_at');
-        $this->applyRevenueFilter($billsQuery, 'period', $period, null, null, 'created_at');
+        $this->applyRevenueFilter($billsQuery, 'period', $period, null, null, 'due_date');
 
         $unpaidBills = (clone $billsQuery)->with(['student', 'paymentType'])->get();
         $totalOutstanding = (clone $billsQuery)->sum('outstanding_amount');
@@ -364,7 +364,7 @@ class DocumentService
                     });
             })
             ->whereNull('deleted_at');
-        $this->applyRevenueFilter($overdueBillsQuery, 'period', $period, null, null, 'created_at');
+        $this->applyRevenueFilter($overdueBillsQuery, 'period', $period, null, null, 'due_date');
 
         $overdueBills = (clone $overdueBillsQuery)->with(['student', 'paymentType'])->get();
         $overdueOutstanding = (clone $overdueBillsQuery)->sum('outstanding_amount');
@@ -391,7 +391,7 @@ class DocumentService
         $billsQuery = Bill::query()
             ->whereIn('status', [Bill::STATUS_UNPAID, Bill::STATUS_OVERDUE])
             ->whereNull('deleted_at');
-        $this->applyRevenueFilter($billsQuery, 'period', $period, null, null, 'created_at');
+        $this->applyRevenueFilter($billsQuery, 'period', $period, null, null, 'due_date');
 
         $unpaidBills = $billsQuery->with(['student', 'paymentType'])->get();
 

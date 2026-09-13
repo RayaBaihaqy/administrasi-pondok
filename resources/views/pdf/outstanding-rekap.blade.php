@@ -111,9 +111,10 @@
 
     <div class="header" style="text-align: center;">
         <img src="{{ public_path('images/logo.png') }}" style="height: 65px; width: auto; margin-bottom: 8px;">
-        <h1 style="margin: 0; font-size: 20px;">Yayasan Perguruan Islam Miftahul 'Ulum</h1>
-        <p style="margin: 3px 0 0 0; font-weight: bold; color: #2e7d32;">REKAPITULASI LAPORAN TUNGGAKAN TAGIHAN SISWA - MTs. MIFTAHUL 'ULUM</p>
-        <div style="font-size: 11px; color: #666; margin-top: 3px;">Jl. Raya Setu Kp. Cibuntu RT. 002/007 Desa Cibuntu Kec. Cibitung</div>
+        <div style="font-size: 11.5px; font-weight: 600; color: #2e7d32; letter-spacing: 0.5px; text-transform: uppercase;">Yayasan Perguruan Islam Miftahul 'Ulum</div>
+        <div style="font-size: 16px; font-weight: bold; color: #1b5e20; margin-top: 2px; text-transform: uppercase;">MADRASAH TSANAWIYAH MIFTAHUL 'ULUM</div>
+        <p style="margin: 4px 0 0 0; font-weight: bold; color: #2e7d32;">REKAPITULASI LAPORAN TUNGGAKAN TAGIHAN SISWA</p>
+        <div style="font-size: 11px; color: #666; margin-top: 3px;">Jl. Raya Setu Kp. Cibuntu RT. 002/007 Desa Cibuntu Kec. Cibitung Kab. Bekasi</div>
         <div class="period-badge" style="margin-top: 5px;">Periode: {{ $periodLabel }}</div>
     </div>
 

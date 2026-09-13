@@ -43,22 +43,25 @@
             padding-left: 10px;
         }
         .kop-yayasan {
-            font-size: 15px;
-            font-weight: bold;
-            color: #1b5e20;
+            font-size: 11px;
+            font-weight: 600;
+            color: #2e7d32;
             letter-spacing: 0.5px;
             text-transform: uppercase;
             margin: 0;
+            line-height: 1.2;
         }
         .kop-school {
-            font-size: 13px;
+            font-size: 15px;
             font-weight: bold;
-            color: #2e7d32;
+            color: #1b5e20;
             margin-top: 2px;
             text-transform: uppercase;
+            letter-spacing: 0.3px;
+            line-height: 1.2;
         }
         .kop-address {
-            font-size: 10px;
+            font-size: 9.5px;
             color: #555555;
             margin-top: 3px;
             line-height: 1.3;
@@ -235,7 +238,7 @@
 
         /* Signature Section */
         .signature-table {
-            margin-top: 135px;
+            margin-top: 20px;
             margin-left: auto;
             margin-right: 0;
             border-collapse: collapse;
@@ -246,6 +249,27 @@
             font-size: 11px;
             vertical-align: bottom;
             padding: 0;
+        }
+        .sig-container {
+            position: relative;
+            width: 210px;
+            height: 78px;
+            margin: 3px auto;
+        }
+        .stamp-image {
+            position: absolute;
+            left: 42px;
+            top: -2px;
+            width: 78px;
+            height: 78px;
+            opacity: 0.50;
+        }
+        .signature-image {
+            position: absolute;
+            left: 82px;
+            top: 2px;
+            height: 70px;
+            width: auto;
         }
     </style>
 </head>
@@ -260,8 +284,8 @@
             </td>
             <td class="kop-institution">
                 <div class="kop-yayasan">{{ config('school.name', "YAYASAN PERGURUAN ISLAM MIFTAHUL 'ULUM") }}</div>
-                <div class="kop-school">{{ config('school.institution', "MTs. MIFTAHUL 'ULUM") }}</div>
-                <div class="kop-address">{{ config('school.address', 'Jl. Raya Setu Kp. Cibuntu RT. 002/007 Desa Cibuntu Kec. Cibitung') }}</div>
+                <div class="kop-school">{{ config('school.institution', "MADRASAH TSANAWIYAH MIFTAHUL 'ULUM") }}</div>
+                <div class="kop-address">{{ config('school.address', 'Jl. Raya Setu Kp. Cibuntu RT. 002/007 Desa Cibuntu Kec. Cibitung Kab. Bekasi') }}</div>
             </td>
             <td class="kop-meta">
                 <div class="doc-type-title">INVOICE TAGIHAN</div>
@@ -410,21 +434,30 @@
                 </div>
             </div>
 
-            <!-- Tanda Tangan -->
+            <!-- Tanda Tangan & Cap Resmi -->
             <table class="signature-table" align="right">
                 <tr>
                     <td class="signature-cell">
-                        <div style="color: #666; font-size: 10.5px;">Cibitung, {{ \Carbon\Carbon::parse($bill->billing_date)->translatedFormat('d F Y') }}</div>
+                        <div style="color: #666; font-size: 10.5px;">Cibitung Kab. Bekasi, {{ \Carbon\Carbon::parse($bill->billing_date)->translatedFormat('d F Y') }}</div>
                         <div style="font-weight: bold; margin-top: 3px;">Bendahara MTs Miftahul 'Ulum,</div>
                         @php
+                            $stampPath = public_path('images/ChatGPT Image Sep 7, 2026, 05_40_43 AM.png');
+                            if (!file_exists($stampPath)) {
+                                $stampPath = public_path('images/stamp.png');
+                            }
+                            $stampBase64 = file_exists($stampPath) ? 'data:image/png;base64,' . base64_encode(file_get_contents($stampPath)) : null;
+
                             $sigPath = public_path('images/signature.png');
                             $sigBase64 = file_exists($sigPath) ? 'data:image/png;base64,' . base64_encode(file_get_contents($sigPath)) : null;
                         @endphp
-                        @if($sigBase64)
-                            <img src="{{ $sigBase64 }}" style="height: 80px; margin: 4px 0;" alt="Tanda Tangan"><br>
-                        @else
-                            <div style="height: 80px;"></div>
-                        @endif
+                        <div class="sig-container">
+                            @if($stampBase64)
+                                <img src="{{ $stampBase64 }}" class="stamp-image" alt="Cap Madrasah">
+                            @endif
+                            @if($sigBase64)
+                                <img src="{{ $sigBase64 }}" class="signature-image" alt="Tanda Tangan">
+                            @endif
+                        </div>
                         <strong>{{ config('school.treasurer_name', 'Hj. Titi Nurhayati, S. Pd') }}</strong>
                     </td>
                 </tr>

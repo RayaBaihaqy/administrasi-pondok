@@ -130,6 +130,7 @@ class StudentResource extends Resource
                                     'full_name' => $data['full_name'],
                                     'phone' => $data['phone'] ?? null,
                                     'contact_email' => $data['contact_email'] ?? null,
+                                    'address' => $data['address'] ?? null,
                                 ]);
 
                                 return $parent->id;

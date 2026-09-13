@@ -46,9 +46,10 @@ class SendDueRemindersCommand extends Command
         $skippedCount = 0;
 
         foreach ($bills as $bill) {
-            // Idempotency Check: Jangan duplikat log pengingat pada tanggal yang sama
+            // Idempotency Check: Jangan duplikat log pengingat untuk tagihan yang sama pada hari yang sama
             $alreadySent = WhatsAppLog::where('student_id', $bill->student_id)
                 ->where('message_type', WhatsAppLog::TYPE_DUE_REMINDER)
+                ->where('message_content', 'like', '%'.$bill->bill_number.'%')
                 ->whereDate('created_at', Carbon::today())
                 ->exists();
 

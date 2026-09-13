@@ -15,7 +15,7 @@ class ListStudentPaymentOverrides extends ListRecords
     {
         return [
             Actions\CreateAction::make()
-                ->label('Tambah Override Pricing')
+                ->label('Tambah Beasiswa')
                 ->visible(fn (): bool => Auth::user()?->isSuperAdmin() ?? false),
         ];
     }
