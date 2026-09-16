@@ -8,7 +8,6 @@ use App\Models\PaymentEvidence;
 use App\Models\PaymentGatewayTransaction;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Midtrans\Config as MidtransConfig;
 use Midtrans\Snap as MidtransSnap;
 use RuntimeException;

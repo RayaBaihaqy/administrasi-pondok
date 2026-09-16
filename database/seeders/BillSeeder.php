@@ -11,21 +11,30 @@ use App\Models\Student;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Str;
 
 class BillSeeder extends Seeder
 {
     /**
      * Run the database seeds.
+     * Menggunakan seluruh 11 Daftar Pembayaran & Nominal Resmi dari Klien.
      */
     public function run(): void
     {
         $academicYear = AcademicYear::current() ?? AcademicYear::first();
-        $sppType = PaymentType::where('code', PaymentType::CODE_SPP)->first();
-        $daftarUlangType = PaymentType::where('code', PaymentType::CODE_DAFTAR_ULANG)->first();
-        $atType = PaymentType::where('code', PaymentType::CODE_AT)->first();
-        $pendaftaranBaruType = PaymentType::where('code', PaymentType::CODE_PENDAFTARAN_BARU)->first();
         $admin = User::where('role', 'admin')->first() ?? User::first();
+
+        // 11 Payment Types
+        $sppType = PaymentType::where('code', PaymentType::CODE_SPP)->first();
+        $pendaftaranBaruType = PaymentType::where('code', PaymentType::CODE_PENDAFTARAN_BARU)->first();
+        $daftarUlangGanjilType = PaymentType::where('code', PaymentType::CODE_DAFTAR_ULANG_GANJIL)->first();
+        $astsPtsGanjilType = PaymentType::where('code', PaymentType::CODE_ASTS_PTS_GANJIL)->first();
+        $asasGanjilType = PaymentType::where('code', PaymentType::CODE_ASAS_GANJIL)->first();
+        $ldksType = PaymentType::where('code', PaymentType::CODE_LDKS)->first();
+        $daftarUlangGenapType = PaymentType::where('code', PaymentType::CODE_DAFTAR_ULANG_GENAP)->first();
+        $astsPtsGenapType = PaymentType::where('code', PaymentType::CODE_ASTS_PTS_GENAP)->first();
+        $asataPatType = PaymentType::where('code', PaymentType::CODE_ASATA_PAT)->first();
+        $studyTourType = PaymentType::where('code', PaymentType::CODE_STUDY_TOUR)->first();
+        $akhirTahunType = PaymentType::where('code', PaymentType::CODE_AKHIR_TAHUN)->first();
 
         if (! $academicYear || ! $sppType) {
             return;
@@ -39,36 +48,25 @@ class BillSeeder extends Seeder
         $billCounter = 1;
         $paymentMethods = ['cash', 'bank_transfer', 'midtrans_qris', 'midtrans_gopay', 'midtrans_bank_transfer'];
 
-        // Loop untuk 8 Bulan di Tahun 2026 (Januari s/d Agustus 2026)
+        // ─── 1. SPP Bulanan (Januari s/d Agustus 2026) - Rp 75.000 / bln ────────
         for ($month = 1; $month <= 8; $month++) {
             $monthStr = str_pad($month, 2, '0', STR_PAD_LEFT);
             $billingPeriod = "2026-{$monthStr}-01";
             $billingDate = "2026-{$monthStr}-01";
-            $dueDate = "2026-{$monthStr}-10"; // Sesuai Konfirmasi Client: Jatuh tempo tgl 10
+            $dueDate = "2026-{$monthStr}-10";
             $createdAtTime = "2026-{$monthStr}-01 08:00:00";
+            $sppAmount = 75000;
 
-            // Setiap siswa aktif dibuatkan SPP Bulanan
             foreach ($students as $student) {
-                // Harga SPP MTs berdasarkan tingkat kelas
-                $basePrice = match ($student->class_level) {
-                    7 => 350000,
-                    8 => 375000,
-                    9 => 400000,
-                    default => 350000,
-                };
-
                 $cleanNis = str_replace([' ', '-'], '', $student->nis);
                 $billNumber = 'INV-'.$cleanNis.'-2026'.$monthStr.'-'.str_pad($billCounter, 4, '0', STR_PAD_LEFT);
 
-                // Tentukan status pembayaran per bulan
                 $isPaid = false;
                 $isOverdue = false;
 
                 if ($month <= 6) {
-                    // Bulan Jan - Jun: 95% Lunas
                     $isPaid = (rand(1, 100) <= 95);
                 } elseif ($month == 7) {
-                    // Bulan Juli: 75% Lunas, 25% Terlambat (Overdue)
                     $randVal = rand(1, 100);
                     if ($randVal <= 75) {
                         $isPaid = true;
@@ -76,7 +74,6 @@ class BillSeeder extends Seeder
                         $isOverdue = true;
                     }
                 } else {
-                    // Bulan Agustus (Bulan Ini): 60% Lunas, 40% Belum Lunas (Jatuh tempo 10 Aug)
                     $dueDate = '2026-08-10';
                     $isPaid = (rand(1, 100) <= 60);
                 }
@@ -97,9 +94,9 @@ class BillSeeder extends Seeder
                     'billing_period' => $billingPeriod,
                     'billing_date' => $billingDate,
                     'due_date' => $dueDate,
-                    'amount' => $basePrice,
-                    'paid_amount' => $isPaid ? $basePrice : 0,
-                    'outstanding_amount' => $isPaid ? 0 : $basePrice,
+                    'amount' => $sppAmount,
+                    'paid_amount' => $isPaid ? $sppAmount : 0,
+                    'outstanding_amount' => $isPaid ? 0 : $sppAmount,
                     'status' => $status,
                     'created_at' => $createdAtTime,
                     'updated_at' => $createdAtTime,
@@ -107,15 +104,14 @@ class BillSeeder extends Seeder
 
                 BillItem::create([
                     'bill_id' => $bill->id,
-                    'description' => 'SPP Bulanan MTs - '.Carbon::parse($billingPeriod)->translatedFormat('F Y'),
+                    'description' => 'SPP MTs - '.Carbon::parse($billingPeriod)->translatedFormat('F Y'),
                     'quantity' => 1,
-                    'unit_price' => $basePrice,
-                    'subtotal' => $basePrice,
+                    'unit_price' => $sppAmount,
+                    'subtotal' => $sppAmount,
                     'created_at' => $createdAtTime,
                     'updated_at' => $createdAtTime,
                 ]);
 
-                // Jika tagihan lunas, catat pembayaran dengan variasi tanggal bayar & metode
                 if ($isPaid) {
                     $payDay = str_pad(rand(2, 10), 2, '0', STR_PAD_LEFT);
                     $payHour = str_pad(rand(8, 17), 2, '0', STR_PAD_LEFT);
@@ -132,7 +128,7 @@ class BillSeeder extends Seeder
                         'parent_id' => $student->parent_id,
                         'recorded_by' => $admin->id,
                         'payment_number' => Payment::generatePaymentNumberFromBill($bill, $source),
-                        'amount' => $basePrice,
+                        'amount' => $sppAmount,
                         'status' => Payment::STATUS_SUCCESS,
                         'source' => $source,
                         'method' => $cleanMethod,
@@ -147,15 +143,13 @@ class BillSeeder extends Seeder
             }
         }
 
-        // Tagihan Pendaftaran Siswa Baru (Model Cicilan Bertahap: 1 Tagihan Total Rp 1.500.000)
+        // ─── 2. Pendaftaran Siswa Baru (Kelas 7) - Rp 1.190.000 ─────────────────
         if ($pendaftaranBaruType) {
             $class7Students = Student::where('class_level', 7)->get();
             foreach ($class7Students as $c7Student) {
                 $cleanNis = str_replace([' ', '-'], '', $c7Student->nis);
-                $totalEntry = 1500000;
-                $installmentPerMonth = 500000; // 3x cicilan @ Rp 500.000
+                $totalEntry = 1190000;
 
-                // 1 Tagihan Utama bernilai penuh Rp 1.500.000
                 $bill = Bill::create([
                     'student_id' => $c7Student->id,
                     'parent_id' => $c7Student->parent_id,
@@ -166,49 +160,49 @@ class BillSeeder extends Seeder
                     'billing_date' => '2026-07-15',
                     'due_date' => '2026-09-30',
                     'amount' => $totalEntry,
-                    'paid_amount' => 1000000, // Sudah dicicil 2x (Rp 1.000.000)
-                    'outstanding_amount' => 500000, // Sisa Rp 500.000
+                    'paid_amount' => 800000,
+                    'outstanding_amount' => 390000,
                     'status' => Bill::STATUS_UNPAID,
-                    'notes' => 'Pendaftaran Siswa Baru MTs (Skema Cicilan 3x)',
+                    'notes' => 'Pendaftaran Siswa Baru MTs (Skema Cicilan)',
                 ]);
 
                 BillItem::create([
                     'bill_id' => $bill->id,
-                    'description' => 'Pendaftaran Siswa Baru (Total 3x Cicilan)',
+                    'description' => 'Pendaftaran Siswa Baru MTs Miftahul Ulum',
                     'quantity' => 1,
                     'unit_price' => $totalEntry,
                     'subtotal' => $totalEntry,
                 ]);
 
-                // Cicilan 1 (Juli 2026)
+                // Cicilan 1 (Juli 2026: Rp 500.000)
                 Payment::create([
                     'bill_id' => $bill->id,
                     'student_id' => $c7Student->id,
                     'parent_id' => $c7Student->parent_id,
                     'recorded_by' => $admin->id,
-                    'payment_number' => Payment::generatePaymentNumberFromBill($bill, Payment::SOURCE_MANUAL).'-01',
-                    'amount' => $installmentPerMonth,
+                    'payment_number' => Payment::generatePaymentNumberFromBill($bill, Payment::SOURCE_MANUAL),
+                    'amount' => 500000,
                     'status' => Payment::STATUS_SUCCESS,
                     'source' => Payment::SOURCE_MANUAL,
                     'method' => 'bank_transfer',
-                    'notes' => 'Pembayaran Cicilan 1 dari 3 Pendaftaran Siswa Baru',
+                    'notes' => 'Pembayaran Cicilan 1 Pendaftaran Siswa Baru',
                     'paid_at' => '2026-07-20 10:00:00',
                     'created_at' => '2026-07-20 10:00:00',
                     'updated_at' => '2026-07-20 10:00:00',
                 ]);
 
-                // Cicilan 2 (Agustus 2026)
+                // Cicilan 2 (Agustus 2026: Rp 300.000)
                 Payment::create([
                     'bill_id' => $bill->id,
                     'student_id' => $c7Student->id,
                     'parent_id' => $c7Student->parent_id,
                     'recorded_by' => $admin->id,
-                    'payment_number' => Payment::generatePaymentNumberFromBill($bill, Payment::SOURCE_MANUAL).'-02',
-                    'amount' => $installmentPerMonth,
+                    'payment_number' => Payment::generatePaymentNumberFromBill($bill, Payment::SOURCE_MANUAL),
+                    'amount' => 300000,
                     'status' => Payment::STATUS_SUCCESS,
                     'source' => Payment::SOURCE_MANUAL,
                     'method' => 'bank_transfer',
-                    'notes' => 'Pembayaran Cicilan 2 dari 3 Pendaftaran Siswa Baru',
+                    'notes' => 'Pembayaran Cicilan 2 Pendaftaran Siswa Baru',
                     'paid_at' => '2026-08-20 10:00:00',
                     'created_at' => '2026-08-20 10:00:00',
                     'updated_at' => '2026-08-20 10:00:00',
@@ -216,40 +210,191 @@ class BillSeeder extends Seeder
             }
         }
 
-        // Tagihan Akhir Tahun Kelas 9 (AT - Model Cicilan Bertahap: 1 Tagihan Total Rp 2.000.000)
-        if ($atType) {
-            $class9Students = Student::where('class_level', 9)->take(5)->get();
-            foreach ($class9Students as $c9Student) {
-                $cleanNis = str_replace([' ', '-'], '', $c9Student->nis);
-                $totalAt = 2000000;
-                $installmentAmount = 200000; // 10x cicilan @ Rp 200.000
+        // ─── 3. Daftar Ulang Tahun Ajaran Baru (Kelas 8 & 9) - Rp 440.000 ───────
+        if ($daftarUlangGanjilType) {
+            $class89Students = Student::whereIn('class_level', [8, 9])->take(40)->get();
+            foreach ($class89Students as $s) {
+                $cleanNis = str_replace([' ', '-'], '', $s->nis);
+                $duAmount = 440000;
 
-                // 1 Tagihan Utama Rp 2.000.000
                 $bill = Bill::create([
-                    'student_id' => $c9Student->id,
-                    'parent_id' => $c9Student->parent_id,
-                    'payment_type_id' => $atType->id,
+                    'student_id' => $s->id,
+                    'parent_id' => $s->parent_id,
+                    'payment_type_id' => $daftarUlangGanjilType->id,
                     'academic_year_id' => $academicYear->id,
-                    'bill_number' => 'INV-'.$cleanNis.'-AT',
-                    'billing_period' => '2026-01-01',
-                    'billing_date' => '2026-01-10',
-                    'due_date' => '2026-10-31',
-                    'amount' => $totalAt,
-                    'paid_amount' => 1200000, // 6x cicilan terbayar (Rp 1.200.000)
-                    'outstanding_amount' => 800000, // Sisa Rp 800.000
-                    'status' => Bill::STATUS_UNPAID,
-                    'notes' => 'Kegiatan Akhir Tahun & Tour Kelas 9 (Tenor 10x)',
+                    'bill_number' => 'INV-'.$cleanNis.'-DUGANJIL',
+                    'billing_period' => '2026-07-01',
+                    'billing_date' => '2026-07-10',
+                    'due_date' => '2026-08-10',
+                    'amount' => $duAmount,
+                    'paid_amount' => $duAmount,
+                    'outstanding_amount' => 0,
+                    'status' => Bill::STATUS_PAID,
+                    'notes' => 'Daftar Ulang Tahun Ajaran Baru (Kelas '.$s->class_level.')',
                 ]);
 
                 BillItem::create([
                     'bill_id' => $bill->id,
-                    'description' => 'Kegiatan Akhir Tahun & Tour Kelas 9',
+                    'description' => 'Daftar Ulang Tahun Ajaran Baru Siswa Kelas 8 dan 9',
+                    'quantity' => 1,
+                    'unit_price' => $duAmount,
+                    'subtotal' => $duAmount,
+                ]);
+
+                Payment::create([
+                    'bill_id' => $bill->id,
+                    'student_id' => $s->id,
+                    'parent_id' => $s->parent_id,
+                    'recorded_by' => $admin->id,
+                    'payment_number' => Payment::generatePaymentNumberFromBill($bill, Payment::SOURCE_MANUAL),
+                    'amount' => $duAmount,
+                    'status' => Payment::STATUS_SUCCESS,
+                    'source' => Payment::SOURCE_MANUAL,
+                    'method' => 'cash',
+                    'notes' => 'Lunas Daftar Ulang Tahun Ajaran Baru',
+                    'paid_at' => '2026-07-15 09:30:00',
+                    'created_at' => '2026-07-15 09:30:00',
+                    'updated_at' => '2026-07-15 09:30:00',
+                ]);
+            }
+        }
+
+        // ─── 4. LDKS (Kelas 7) - Rp 450.000 ─────────────────────────────────────
+        if ($ldksType) {
+            $class7Ldks = Student::where('class_level', 7)->take(30)->get();
+            foreach ($class7Ldks as $c7Ldks) {
+                $cleanNis = str_replace([' ', '-'], '', $c7Ldks->nis);
+                $ldksAmount = 450000;
+                $isPaid = rand(1, 100) <= 80;
+
+                $bill = Bill::create([
+                    'student_id' => $c7Ldks->id,
+                    'parent_id' => $c7Ldks->parent_id,
+                    'payment_type_id' => $ldksType->id,
+                    'academic_year_id' => $academicYear->id,
+                    'bill_number' => 'INV-'.$cleanNis.'-LDKS',
+                    'billing_period' => '2026-08-01',
+                    'billing_date' => '2026-08-05',
+                    'due_date' => '2026-08-25',
+                    'amount' => $ldksAmount,
+                    'paid_amount' => $isPaid ? $ldksAmount : 0,
+                    'outstanding_amount' => $isPaid ? 0 : $ldksAmount,
+                    'status' => $isPaid ? Bill::STATUS_PAID : Bill::STATUS_UNPAID,
+                    'notes' => 'Kegiatan Latihan Dasar Kepemimpinan Siswa (LDKS)',
+                ]);
+
+                BillItem::create([
+                    'bill_id' => $bill->id,
+                    'description' => 'Biaya Kegiatan LDKS Siswa Kelas 7',
+                    'quantity' => 1,
+                    'unit_price' => $ldksAmount,
+                    'subtotal' => $ldksAmount,
+                ]);
+
+                if ($isPaid) {
+                    Payment::create([
+                        'bill_id' => $bill->id,
+                        'student_id' => $c7Ldks->id,
+                        'parent_id' => $c7Ldks->parent_id,
+                        'recorded_by' => $admin->id,
+                        'payment_number' => Payment::generatePaymentNumberFromBill($bill, Payment::SOURCE_MIDTRANS),
+                        'amount' => $ldksAmount,
+                        'status' => Payment::STATUS_SUCCESS,
+                        'source' => Payment::SOURCE_MIDTRANS,
+                        'method' => 'qris',
+                        'notes' => 'Pembayaran Lunas LDKS Kelas 7',
+                        'paid_at' => '2026-08-12 11:20:00',
+                        'created_at' => '2026-08-12 11:20:00',
+                        'updated_at' => '2026-08-12 11:20:00',
+                    ]);
+                }
+            }
+        }
+
+        // ─── 5. Study Tour (Kelas 8) - Rp 450.000 ───────────────────────────────
+        if ($studyTourType) {
+            $class8Tour = Student::where('class_level', 8)->take(30)->get();
+            foreach ($class8Tour as $c8Tour) {
+                $cleanNis = str_replace([' ', '-'], '', $c8Tour->nis);
+                $stAmount = 450000;
+                $isPaid = rand(1, 100) <= 70;
+
+                $bill = Bill::create([
+                    'student_id' => $c8Tour->id,
+                    'parent_id' => $c8Tour->parent_id,
+                    'payment_type_id' => $studyTourType->id,
+                    'academic_year_id' => $academicYear->id,
+                    'bill_number' => 'INV-'.$cleanNis.'-STUDYTOUR',
+                    'billing_period' => '2026-05-01',
+                    'billing_date' => '2026-05-05',
+                    'due_date' => '2026-05-25',
+                    'amount' => $stAmount,
+                    'paid_amount' => $isPaid ? $stAmount : 0,
+                    'outstanding_amount' => $isPaid ? 0 : $stAmount,
+                    'status' => $isPaid ? Bill::STATUS_PAID : Bill::STATUS_UNPAID,
+                    'notes' => 'Kegiatan Study Tour Edukatif Kelas 8',
+                ]);
+
+                BillItem::create([
+                    'bill_id' => $bill->id,
+                    'description' => 'Biaya Kegiatan Study Tour Kelas 8',
+                    'quantity' => 1,
+                    'unit_price' => $stAmount,
+                    'subtotal' => $stAmount,
+                ]);
+
+                if ($isPaid) {
+                    Payment::create([
+                        'bill_id' => $bill->id,
+                        'student_id' => $c8Tour->id,
+                        'parent_id' => $c8Tour->parent_id,
+                        'recorded_by' => $admin->id,
+                        'payment_number' => Payment::generatePaymentNumberFromBill($bill, Payment::SOURCE_MANUAL),
+                        'amount' => $stAmount,
+                        'status' => Payment::STATUS_SUCCESS,
+                        'source' => Payment::SOURCE_MANUAL,
+                        'method' => 'bank_transfer',
+                        'notes' => 'Pembayaran Lunas Study Tour Kelas 8',
+                        'paid_at' => '2026-05-18 14:00:00',
+                        'created_at' => '2026-05-18 14:00:00',
+                        'updated_at' => '2026-05-18 14:00:00',
+                    ]);
+                }
+            }
+        }
+
+        // ─── 6. Akhir Tahun (Kelas 9) - Rp 2.000.000 (Cicilan 10x) ──────────────
+        if ($akhirTahunType) {
+            $class9Students = Student::where('class_level', 9)->take(15)->get();
+            foreach ($class9Students as $c9Student) {
+                $cleanNis = str_replace([' ', '-'], '', $c9Student->nis);
+                $totalAt = 2000000;
+                $installmentAmount = 200000;
+
+                $bill = Bill::create([
+                    'student_id' => $c9Student->id,
+                    'parent_id' => $c9Student->parent_id,
+                    'payment_type_id' => $akhirTahunType->id,
+                    'academic_year_id' => $academicYear->id,
+                    'bill_number' => 'INV-'.$cleanNis.'-AKHIRTAHUN',
+                    'billing_period' => '2026-01-01',
+                    'billing_date' => '2026-01-10',
+                    'due_date' => '2026-10-31',
+                    'amount' => $totalAt,
+                    'paid_amount' => 1200000,
+                    'outstanding_amount' => 800000,
+                    'status' => Bill::STATUS_UNPAID,
+                    'notes' => 'Kegiatan Akhir Tahun, Wisuda & Pelepasan Kelas 9 (Tenor 10x)',
+                ]);
+
+                BillItem::create([
+                    'bill_id' => $bill->id,
+                    'description' => 'Kegiatan Akhir Tahun & Pelepasan Kelas 9',
                     'quantity' => 1,
                     'unit_price' => $totalAt,
                     'subtotal' => $totalAt,
                 ]);
 
-                // 6x cicilan yang sudah terbayar
                 for ($t = 1; $t <= 6; $t++) {
                     $tMonth = str_pad($t, 2, '0', STR_PAD_LEFT);
                     Payment::create([
@@ -257,7 +402,7 @@ class BillSeeder extends Seeder
                         'student_id' => $c9Student->id,
                         'parent_id' => $c9Student->parent_id,
                         'recorded_by' => $admin->id,
-                        'payment_number' => Payment::generatePaymentNumberFromBill($bill, Payment::SOURCE_MIDTRANS).'-'.str_pad($t, 2, '0', STR_PAD_LEFT),
+                        'payment_number' => Payment::generatePaymentNumberFromBill($bill, Payment::SOURCE_MIDTRANS),
                         'amount' => $installmentAmount,
                         'status' => Payment::STATUS_SUCCESS,
                         'source' => Payment::SOURCE_MIDTRANS,
@@ -271,14 +416,63 @@ class BillSeeder extends Seeder
             }
         }
 
-        // Generate Sample WhatsApp Logs untuk Dashboard & Log WhatsApp
-        $samplePayments = Payment::where('status', Payment::STATUS_SUCCESS)->take(15)->get();
+        // ─── 7. ASTS/PTS Ganjil (Rp 75.000) & ASAS Ganjil (Rp 150.000) ───────────
+        if ($astsPtsGanjilType) {
+            $sampleAsts = Student::take(25)->get();
+            foreach ($sampleAsts as $s) {
+                $cleanNis = str_replace([' ', '-'], '', $s->nis);
+                $astsAmount = 75000;
+
+                $bill = Bill::create([
+                    'student_id' => $s->id,
+                    'parent_id' => $s->parent_id,
+                    'payment_type_id' => $astsPtsGanjilType->id,
+                    'academic_year_id' => $academicYear->id,
+                    'bill_number' => 'INV-'.$cleanNis.'-ASTSGANJIL',
+                    'billing_period' => '2026-09-01',
+                    'billing_date' => '2026-09-01',
+                    'due_date' => '2026-09-15',
+                    'amount' => $astsAmount,
+                    'paid_amount' => $astsAmount,
+                    'outstanding_amount' => 0,
+                    'status' => Bill::STATUS_PAID,
+                    'notes' => 'Ujian ASTS/PTS Semester Ganjil',
+                ]);
+
+                BillItem::create([
+                    'bill_id' => $bill->id,
+                    'description' => 'Biaya Ujian ASTS/PTS Ganjil',
+                    'quantity' => 1,
+                    'unit_price' => $astsAmount,
+                    'subtotal' => $astsAmount,
+                ]);
+
+                Payment::create([
+                    'bill_id' => $bill->id,
+                    'student_id' => $s->id,
+                    'parent_id' => $s->parent_id,
+                    'recorded_by' => $admin->id,
+                    'payment_number' => Payment::generatePaymentNumberFromBill($bill, Payment::SOURCE_MANUAL),
+                    'amount' => $astsAmount,
+                    'status' => Payment::STATUS_SUCCESS,
+                    'source' => Payment::SOURCE_MANUAL,
+                    'method' => 'cash',
+                    'notes' => 'Pembayaran Ujian ASTS/PTS Ganjil',
+                    'paid_at' => '2026-09-05 08:45:00',
+                    'created_at' => '2026-09-05 08:45:00',
+                    'updated_at' => '2026-09-05 08:45:00',
+                ]);
+            }
+        }
+
+        // WhatsApp Logs
+        $samplePayments = Payment::where('status', Payment::STATUS_SUCCESS)->take(20)->get();
         $waService = new \App\Services\WhatsAppAutomationService;
         foreach ($samplePayments as $p) {
             $waService->logPaymentSuccess($p);
         }
 
-        $sampleUnpaidBills = Bill::where('status', Bill::STATUS_UNPAID)->take(10)->get();
+        $sampleUnpaidBills = Bill::where('status', Bill::STATUS_UNPAID)->take(15)->get();
         foreach ($sampleUnpaidBills as $b) {
             $waService->logDueReminder($b);
         }

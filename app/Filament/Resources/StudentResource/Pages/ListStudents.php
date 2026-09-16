@@ -37,13 +37,23 @@ class ListStudents extends ListRecords
                 ->modalDescription('Silakan unggah file spreadsheet template (.csv / .xlsx / .xls) yang telah diisi data siswa. Sistem akan otomatis membuat data siswa, orang tua, akun login portal wali murid, dan penempatan kelas.')
                 ->form([
                     Forms\Components\FileUpload::make('attachment')
-                        ->label('Pilih File Spreadsheet Template (.csv / .txt)')
+                        ->label('Pilih File Spreadsheet Template (.xlsx / .xls / .csv / .txt)')
                         ->acceptedFileTypes([
+                            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                            'application/vnd.ms-excel',
+                            'application/msexcel',
+                            'application/x-msexcel',
+                            'application/x-ms-excel',
+                            'application/x-excel',
+                            'application/x-dos_ms_excel',
+                            'application/xls',
+                            'application/x-xls',
                             'text/csv',
                             'text/plain',
-                            'application/vnd.ms-excel',
                             'application/csv',
                             'text/comma-separated-values',
+                            'application/xml',
+                            'text/xml',
                         ])
                         ->disk('local')
                         ->directory('temp-imports')

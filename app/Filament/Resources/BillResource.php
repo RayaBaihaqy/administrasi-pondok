@@ -89,6 +89,7 @@ class BillResource extends Resource
                             ->afterStateUpdated(function ($state, callable $set, callable $get) {
                                 if (! $state) {
                                     $set('amount', null);
+
                                     return;
                                 }
 
@@ -98,17 +99,20 @@ class BillResource extends Resource
                                 }
 
                                 // Smart presets sesuai ketentuan sekolah/yayasan
-                                if ($paymentType->code === 'AT') {
+                                if (in_array($paymentType->code, ['AKHIR_TAHUN', 'AT'])) {
                                     $set('is_installment', true);
                                     $set('tenor_count', 10);
                                 } elseif ($paymentType->code === 'PENDAFTARAN_BARU') {
                                     $set('is_installment', true);
                                     $set('tenor_count', 3);
+                                } elseif ($paymentType->allows_installment) {
+                                    $set('is_installment', true);
+                                    $set('tenor_count', 2);
                                 }
 
                                 $studentId = $get('student_id');
                                 $academicYearId = $get('academic_year_id');
-                                
+
                                 // Default nominal langsung diambil dari master data jenis pembayaran
                                 $amount = (int) ($paymentType->default_amount ?? 0);
 

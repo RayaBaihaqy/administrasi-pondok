@@ -58,7 +58,42 @@ class Student extends Model
 
     const CLASS_LEVELS = [7, 8, 9];
 
-    const ROMBELS = ['1', '2', '3', '4', '5', 'A', 'B', 'C', 'D', 'E', 'F'];
+    const ROMBELS = ['1', '2', '3', '4'];
+
+    /**
+     * Dapatkan daftar pilihan rombel yang valid sesuai tingkat kelas.
+     * Kelas 7: 7.1, 7.2, 7.3
+     * Kelas 8: 8.1, 8.2, 8.3, 8.4
+     * Kelas 9: 9.1, 9.2, 9.3, 9.4
+     */
+    public static function getRombelsForClass($classLevel): array
+    {
+        if (blank($classLevel)) {
+            return [];
+        }
+
+        $level = (int) $classLevel;
+
+        $existing = static::active()
+            ->where('class_level', $level)
+            ->whereNotNull('rombel')
+            ->where('rombel', '!=', '')
+            ->distinct()
+            ->pluck('rombel')
+            ->sort()
+            ->values();
+
+        if ($existing->isEmpty()) {
+            $defaultRombels = match ($level) {
+                7 => ['1', '2', '3'],
+                8, 9 => ['1', '2', '3', '4'],
+                default => ['1', '2', '3'],
+            };
+            $existing = collect($defaultRombels);
+        }
+
+        return $existing->mapWithKeys(fn ($r) => [$r => "Kelas {$level}.{$r}"])->all();
+    }
 
     // ─── Relationships ───────────────────────────────────────
 

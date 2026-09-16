@@ -32,14 +32,39 @@ class PaymentType extends Model
     // ─── Constants ───────────────────────────────────────────
 
     const CODE_SPP = 'SPP';
-    const CODE_PTS = 'PTS';
-    const CODE_PAS = 'PAS';
-    const CODE_PAT = 'PAT';
-    const CODE_LDKS = 'LDKS';
-    const CODE_ST = 'ST';
-    const CODE_AT = 'AT';
-    const CODE_DAFTAR_ULANG = 'DAFTAR_ULANG';
+
     const CODE_PENDAFTARAN_BARU = 'PENDAFTARAN_BARU';
+
+    const CODE_DAFTAR_ULANG_GANJIL = 'DAFTAR_ULANG_GANJIL';
+
+    const CODE_ASTS_PTS_GANJIL = 'ASTS_PTS_GANJIL';
+
+    const CODE_ASAS_GANJIL = 'ASAS_GANJIL';
+
+    const CODE_LDKS = 'LDKS';
+
+    const CODE_DAFTAR_ULANG_GENAP = 'DAFTAR_ULANG_GENAP';
+
+    const CODE_ASTS_PTS_GENAP = 'ASTS_PTS_GENAP';
+
+    const CODE_ASATA_PAT = 'ASATA_PAT';
+
+    const CODE_STUDY_TOUR = 'STUDY_TOUR';
+
+    const CODE_AKHIR_TAHUN = 'AKHIR_TAHUN';
+
+    // Backward compatibility aliases
+    const CODE_PTS = 'ASTS_PTS_GANJIL';
+
+    const CODE_PAS = 'ASAS_GANJIL';
+
+    const CODE_PAT = 'ASATA_PAT';
+
+    const CODE_ST = 'STUDY_TOUR';
+
+    const CODE_AT = 'AKHIR_TAHUN';
+
+    const CODE_DAFTAR_ULANG = 'DAFTAR_ULANG_GANJIL';
 
     const BILLING_TYPE_MONTHLY = 'monthly';
 

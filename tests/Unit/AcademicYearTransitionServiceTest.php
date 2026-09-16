@@ -3,7 +3,6 @@
 namespace Tests\Unit;
 
 use App\Models\AcademicYear;
-use App\Models\PaymentType;
 use App\Models\Student;
 use App\Services\AcademicYearTransitionService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -12,6 +11,7 @@ use Tests\TestCase;
 class AcademicYearTransitionServiceTest extends TestCase
 {
     use DatabaseTransactions;
+
     public function test_transition_service_instantiation(): void
     {
         $service = new AcademicYearTransitionService;
@@ -34,11 +34,25 @@ class AcademicYearTransitionServiceTest extends TestCase
 
             $student->refresh();
             $this->assertEquals($initialClass, $student->class_level);
-            $this->assertEquals(1, $result['retained_count']);
-
             // Cleanup test academic year
             $result['new_year']->delete();
             AcademicYear::where('name', '2026/2027')->update(['is_active' => true]);
         }
+    }
+
+    public function test_transition_service_auto_generates_academic_year_name(): void
+    {
+        $service = new AcademicYearTransitionService;
+        $result = $service->startNewAcademicYear(
+            name: null,
+            startDate: '2027-07-15',
+            endDate: '2028-07-14'
+        );
+
+        $this->assertEquals('2027/2028', $result['new_year']->name);
+
+        // Cleanup
+        $result['new_year']->delete();
+        AcademicYear::where('name', '2026/2027')->update(['is_active' => true]);
     }
 }

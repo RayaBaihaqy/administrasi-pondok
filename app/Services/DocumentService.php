@@ -331,7 +331,6 @@ class DocumentService
         };
     }
 
-
     /**
      * Download Rekapitulasi Tunggakan dalam format PDF.
      */

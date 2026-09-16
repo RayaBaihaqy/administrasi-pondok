@@ -63,23 +63,16 @@ class StudentResource extends Resource
                                 8 => 'Kelas 8 (Delapan)',
                                 9 => 'Kelas 9 (Sembilan)',
                             ])
+                            ->reactive()
+                            ->afterStateUpdated(fn (callable $set) => $set('rombel', null))
                             ->required(),
 
                         Forms\Components\Select::make('rombel')
                             ->label('Rombel (Rombongan Belajar)')
-                            ->options([
-                                '1' => 'Kelas 1 (e.g. 7.1)',
-                                '2' => 'Kelas 2 (e.g. 7.2)',
-                                '3' => 'Kelas 3 (e.g. 7.3)',
-                                '4' => 'Kelas 4 (e.g. 7.4)',
-                                '5' => 'Kelas 5',
-                                'A' => 'Kelas A',
-                                'B' => 'Kelas B',
-                                'C' => 'Kelas C',
-                                'D' => 'Kelas D',
-                                'E' => 'Kelas E',
-                                'F' => 'Kelas F',
-                            ])
+                            ->options(fn (callable $get) => Student::getRombelsForClass($get('class_level')))
+                            ->disabled(fn (callable $get) => blank($get('class_level')))
+                            ->placeholder(fn (callable $get) => blank($get('class_level')) ? 'Pilih tingkat kelas terlebih dahulu...' : 'Pilih salah satu rombel')
+                            ->helperText(fn (callable $get) => blank($get('class_level')) ? 'Silakan pilih tingkat kelas terlebih dahulu.' : null)
                             ->searchable()
                             ->required(),
 
@@ -92,6 +85,7 @@ class StudentResource extends Resource
                                 Student::STATUS_INACTIVE => 'Nonaktif',
                             ])
                             ->default(Student::STATUS_ACTIVE)
+                            ->visible(fn (string $operation): bool => $operation === 'edit')
                             ->required(),
                     ])
                     ->columns(2),
@@ -226,9 +220,12 @@ class StudentResource extends Resource
 
                 Tables\Filters\SelectFilter::make('rombel')
                     ->label('Rombel')
-                    ->options(
-                        collect(Student::ROMBELS)->mapWithKeys(fn ($r) => [$r => $r])
-                    ),
+                    ->options([
+                        '1' => 'Rombel 1 (.1)',
+                        '2' => 'Rombel 2 (.2)',
+                        '3' => 'Rombel 3 (.3)',
+                        '4' => 'Rombel 4 (.4)',
+                    ]),
 
                 Tables\Filters\SelectFilter::make('status')
                     ->label('Status')

@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Bill;
 use App\Models\Payment;
 use App\Services\DocumentService;
-use Illuminate\Http\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class DocumentController extends Controller

@@ -103,7 +103,7 @@ class AcademicYearResource extends Resource
                     ->modalHeading('Aktifkan Tahun Ajaran')
                     ->modalDescription(fn (AcademicYear $record) => "Apakah Anda yakin ingin mengaktifkan tahun ajaran {$record->name}? Tahun ajaran lain akan dinonaktifkan.")
                     ->action(fn (AcademicYear $record) => $record->setAsActive())
-                    ->visible(fn (AcademicYear $record) => ! $record->is_active && Auth::user()->isSuperAdmin()),
+                    ->visible(fn (AcademicYear $record) => ! $record->is_active && (Auth::user()?->isSuperAdmin() ?? false)),
             ])
             ->bulkActions([])
             ->defaultSort('start_date', 'desc');

@@ -85,12 +85,14 @@ class Payment extends Model
 
         if ($bill && $bill->bill_number) {
             $suffix = preg_replace('/^(INV|BILL)-/i', '', $bill->bill_number);
-            return $prefix . $suffix;
+
+            return $prefix.$suffix.'-'.Str::upper(Str::random(4));
         }
 
         $nis = $student?->nis ?? ($bill?->student?->nis ?? null);
         $cleanNis = $nis ? str_replace([' ', '-'], '', $nis) : 'GEN';
-        return $prefix . $cleanNis . '-' . now()->format('Ymd') . '-' . Str::upper(Str::random(4));
+
+        return $prefix.$cleanNis.'-'.now()->format('Ymd').'-'.Str::upper(Str::random(4));
     }
 
     // ─── Relationships ───────────────────────────────────────

@@ -20,14 +20,18 @@ class User extends Authenticatable implements FilamentUser
      * @var list<string>
      */
     const ROLE_SUPER_ADMIN = 'super_admin';
+
     const ROLE_ADMIN = 'admin';
+
     const ROLE_PARENT = 'parent';
 
     protected $fillable = [
         'name',
         'email',
+        'phone',
         'password',
         'role',
+        'signature_path',
     ];
 
     /**
@@ -76,6 +80,35 @@ class User extends Authenticatable implements FilamentUser
     public function isInternalStaff(): bool
     {
         return in_array($this->role, ['super_admin', 'admin']);
+    }
+
+    /**
+     * Mendapatkan user Bendahara / Super Admin aktif.
+     */
+    public static function getActiveTreasurer(): ?self
+    {
+        return static::where('role', self::ROLE_SUPER_ADMIN)->first()
+            ?? static::where('role', self::ROLE_ADMIN)->first();
+    }
+
+    /**
+     * Mendapatkan base64 string gambar tanda tangan (untuk render di PDF DomPDF).
+     */
+    public function getSignatureBase64(): ?string
+    {
+        if ($this->signature_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($this->signature_path)) {
+            $path = \Illuminate\Support\Facades\Storage::disk('public')->path($this->signature_path);
+            if (file_exists($path)) {
+                return 'data:image/png;base64,'.base64_encode(file_get_contents($path));
+            }
+        }
+
+        $defaultPath = public_path('images/signature.png');
+        if (file_exists($defaultPath)) {
+            return 'data:image/png;base64,'.base64_encode(file_get_contents($defaultPath));
+        }
+
+        return null;
     }
 
     // ─── Filament Panel Access ───────────────────────────────

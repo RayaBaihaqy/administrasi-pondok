@@ -13,12 +13,17 @@ class WhatsAppLog extends Model
     protected $table = 'whatsapp_logs';
 
     const TYPE_PAYMENT_SUCCESS = 'pembayaran_sukses';
+
     const TYPE_DUE_REMINDER = 'pengingat_tagihan';
+
     const TYPE_NEW_BILL = 'tagihan_baru';
+
     const TYPE_OVERDUE = 'tagihan_menunggak';
 
     const STATUS_SENT = 'terkirim';
+
     const STATUS_PENDING = 'pending';
+
     const STATUS_FAILED = 'gagal';
 
     protected $fillable = [

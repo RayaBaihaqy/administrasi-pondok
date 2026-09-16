@@ -16,6 +16,7 @@ class CreateParent extends CreateRecord
         $user = User::create([
             'name' => $data['full_name'],
             'email' => $this->data['user_email'],
+            'phone' => $data['phone'] ?? null,
             'password' => bcrypt($this->data['user_password']),
             'role' => 'parent',
         ]);

@@ -4,7 +4,6 @@ namespace Tests\Unit;
 
 use App\Models\Bill;
 use App\Models\ParentProfile;
-use App\Models\Payment;
 use App\Models\PaymentType;
 use App\Models\Student;
 use App\Models\User;

@@ -14,7 +14,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             UserSeeder::class,         // Users + Parents + Students
             AcademicYearSeeder::class,  // Tahun ajaran + placement
-            PaymentTypeSeeder::class,   // Master Jenis Pembayaran + Pricing + Override
+            PaymentTypeSeeder::class,   // Master Jenis Pembayaran + Pricing
             BillSeeder::class,          // Tagihan & Transaksi Sampel
         ]);
     }

@@ -20,6 +20,7 @@ class UserSeeder extends Seeder
             'email' => 'superadmin@pondok.test',
         ], [
             'name' => 'Kepala Bendahara (Super Admin)',
+            'phone' => '081299990001',
             'password' => Hash::make('password'),
             'role' => 'super_admin',
         ]);
@@ -28,6 +29,7 @@ class UserSeeder extends Seeder
             'email' => 'admin@pondok.test',
         ], [
             'name' => 'Hj. Titi Nurhayati, S. Pd',
+            'phone' => '081299990002',
             'password' => Hash::make('password'),
             'role' => 'admin',
         ]);
@@ -300,13 +302,14 @@ class UserSeeder extends Seeder
 
         foreach ($studentsData as $index => $s) {
             $nisnClean = preg_replace('/\D/', '', $s['nisn']);
-            $emailWali = 'wali_' . $nisnClean . '@parent.test';
-            $phoneWali = '0812' . substr($nisnClean, -8);
+            $emailWali = 'wali_'.$nisnClean.'@parent.test';
+            $phoneWali = '0812'.substr($nisnClean, -8);
 
             // Buat Akun User Orang Tua
             $userParent = User::create([
-                'name' => 'Wali ' . ucwords(strtolower($s['name'])),
+                'name' => 'Wali '.ucwords(strtolower($s['name'])),
                 'email' => $emailWali,
+                'phone' => $phoneWali,
                 'password' => Hash::make('password'),
                 'role' => 'parent',
             ]);
@@ -314,14 +317,14 @@ class UserSeeder extends Seeder
             // Buat Profil Orang Tua
             $parentProfile = ParentProfile::create([
                 'user_id' => $userParent->id,
-                'full_name' => 'Wali ' . ucwords(strtolower($s['name'])),
+                'full_name' => 'Wali '.ucwords(strtolower($s['name'])),
                 'phone' => $phoneWali,
                 'contact_email' => $emailWali,
                 'address' => 'Desa Cibuntu, Kec. Cibitung, Kab. Bekasi',
             ]);
 
             // Tanggal lahir realistis (Kelas 7: 2013-2014, Kelas 8: 2012-2013, Kelas 9: 2011-2012)
-            $birthYear = 2026 - (6 + (int)$s['class']);
+            $birthYear = 2026 - (6 + (int) $s['class']);
             $birthMonth = str_pad((($index * 3) % 12) + 1, 2, '0', STR_PAD_LEFT);
             $birthDay = str_pad((($index * 5) % 28) + 1, 2, '0', STR_PAD_LEFT);
             $birthDate = "{$birthYear}-{$birthMonth}-{$birthDay}";
@@ -338,8 +341,8 @@ class UserSeeder extends Seeder
                 'rombel' => $s['rombel'],
                 'entry_year' => $s['entry_year'],
                 'status' => Student::STATUS_ACTIVE,
-                'email' => 'siswa_' . $nisnClean . '@pondok.test',
-                'phone' => '0813' . substr($nisnClean, -8),
+                'email' => 'siswa_'.$nisnClean.'@pondok.test',
+                'phone' => '0813'.substr($nisnClean, -8),
                 'address' => 'Desa Cibuntu RT. 002/007, Kec. Cibitung, Kab. Bekasi',
             ]);
         }

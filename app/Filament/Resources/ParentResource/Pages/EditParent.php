@@ -23,9 +23,12 @@ class EditParent extends EditRecord
         // Update user account jika email/password berubah
         $user = $this->record->user;
 
-        if (! empty($this->data['user_email']) && $user) {
-            $user->email = $this->data['user_email'];
+        if ($user) {
+            if (! empty($this->data['user_email'])) {
+                $user->email = $this->data['user_email'];
+            }
             $user->name = $data['full_name'];
+            $user->phone = $data['phone'] ?? null;
 
             if (! empty($this->data['user_password'])) {
                 $user->password = bcrypt($this->data['user_password']);

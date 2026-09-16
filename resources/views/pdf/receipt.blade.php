@@ -438,14 +438,20 @@
                         <div style="color: #666; font-size: 10.5px;">Cibitung Kab. Bekasi, {{ \Carbon\Carbon::parse($payment->paid_at ?? now())->translatedFormat('d F Y') }}</div>
                         <div style="font-weight: bold; margin-top: 3px;">Bendahara MTs Miftahul 'Ulum,</div>
                         @php
+                            $treasurerUser = \App\Models\User::getActiveTreasurer();
+                            $treasurerName = $treasurerUser?->name ?? config('school.treasurer_name', 'Hj. Titi Nurhayati, S. Pd');
+
+                            $sigBase64 = $treasurerUser?->getSignatureBase64();
+                            if (!$sigBase64) {
+                                $sigPath = public_path('images/signature.png');
+                                $sigBase64 = file_exists($sigPath) ? 'data:image/png;base64,' . base64_encode(file_get_contents($sigPath)) : null;
+                            }
+
                             $stampPath = public_path('images/ChatGPT Image Sep 7, 2026, 05_40_43 AM.png');
                             if (!file_exists($stampPath)) {
                                 $stampPath = public_path('images/stamp.png');
                             }
                             $stampBase64 = file_exists($stampPath) ? 'data:image/png;base64,' . base64_encode(file_get_contents($stampPath)) : null;
-
-                            $sigPath = public_path('images/signature.png');
-                            $sigBase64 = file_exists($sigPath) ? 'data:image/png;base64,' . base64_encode(file_get_contents($sigPath)) : null;
                         @endphp
                         <div class="sig-container">
                             @if($stampBase64)
@@ -455,7 +461,7 @@
                                 <img src="{{ $sigBase64 }}" class="signature-image" alt="Tanda Tangan">
                             @endif
                         </div>
-                        <strong>{{ $payment->recorder?->name ?? config('school.treasurer_name', 'Hj. Titi Nurhayati, S. Pd') }}</strong>
+                        <strong>{{ $treasurerName }}</strong>
                     </td>
                 </tr>
             </table>

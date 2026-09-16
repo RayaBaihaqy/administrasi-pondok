@@ -26,11 +26,6 @@ class ListAcademicYears extends ListRecords
                 ->modalHeading('Mulai Tahun Ajaran Baru & Kenaikan Kelas Massal')
                 ->modalDescription('Tindakan ini akan mengaktifkan tahun ajaran baru, memproses kenaikan kelas siswa, dan otomatis menerbitkan tagihan Daftar Ulang.')
                 ->form([
-                    Forms\Components\TextInput::make('name')
-                        ->label('Nama Tahun Ajaran Baru')
-                        ->placeholder((now()->year).'/'.(now()->year + 1))
-                        ->required(),
-
                     Forms\Components\DatePicker::make('start_date')
                         ->label('Tanggal Mulai (Tahun Ajaran Baru)')
                         ->default(fn () => \Carbon\Carbon::create(now()->year, 7, 15))
@@ -82,7 +77,7 @@ class ListAcademicYears extends ListRecords
 
                         $transitionService = new AcademicYearTransitionService;
                         $result = $transitionService->startNewAcademicYear(
-                            name: $data['name'],
+                            name: null,
                             startDate: $data['start_date'],
                             endDate: $data['end_date'],
                             retainedStudentIds: $retainedStudentIds

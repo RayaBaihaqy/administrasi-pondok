@@ -56,11 +56,15 @@ class ListBills extends ListRecords
                         ])
                         ->visible(fn (callable $get) => in_array($get('target_type'), ['class_level', 'rombel']))
                         ->required(fn (callable $get) => in_array($get('target_type'), ['class_level', 'rombel']))
-                        ->reactive(),
+                        ->reactive()
+                        ->afterStateUpdated(fn (callable $set) => $set('rombel', null)),
 
                     Forms\Components\Select::make('rombel')
                         ->label('Pilih Rombel')
-                        ->options(collect(Student::ROMBELS)->mapWithKeys(fn ($r) => [$r => "Kelas {$r}"]))
+                        ->options(fn (callable $get) => Student::getRombelsForClass($get('class_level')))
+                        ->disabled(fn (callable $get) => blank($get('class_level')))
+                        ->placeholder(fn (callable $get) => blank($get('class_level')) ? 'Pilih tingkat kelas terlebih dahulu...' : 'Pilih salah satu rombel')
+                        ->helperText(fn (callable $get) => blank($get('class_level')) ? 'Silakan pilih tingkat kelas di atas terlebih dahulu.' : null)
                         ->visible(fn (callable $get) => $get('target_type') === 'rombel')
                         ->required(fn (callable $get) => $get('target_type') === 'rombel')
                         ->searchable(),

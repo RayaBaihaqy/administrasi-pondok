@@ -24,8 +24,14 @@ class AcademicYearTransitionService
      * Memulai tahun ajaran baru, memproses kenaikan kelas massal siswa (dengan dukungan siswa tinggal kelas),
      * dan otomatis menerbitkan tagihan Daftar Ulang untuk seluruh siswa aktif (Kelas 7, 8, dan 9).
      */
-    public function startNewAcademicYear(string $name, string $startDate, string $endDate, array $retainedStudentIds = []): array
+    public function startNewAcademicYear(?string $name, string $startDate, string $endDate, array $retainedStudentIds = []): array
     {
+        if (blank($name)) {
+            $startYear = Carbon::parse($startDate)->year;
+            $endYear = Carbon::parse($endDate)->year;
+            $name = ($startYear === $endYear) ? "{$startYear}/".($startYear + 1) : "{$startYear}/{$endYear}";
+        }
+
         return DB::transaction(function () use ($name, $startDate, $endDate, $retainedStudentIds) {
             $previousActiveYear = AcademicYear::current();
 
@@ -99,10 +105,12 @@ class AcademicYearTransitionService
                 }
             }
 
-            // 4. Otomatis generate tagihan "Daftar Ulang Kenaikan Kelas" untuk seluruh siswa aktif
-            $daftarUlangType = PaymentType::where('code', 'DAFTAR_ULANG')
-                ->orWhere('name', 'like', '%Daftar Ulang%')
-                ->first();
+            // 4. Otomatis generate tagihan "Daftar Ulang" untuk seluruh siswa aktif
+            $daftarUlangType = PaymentType::whereIn('code', [
+                PaymentType::CODE_DAFTAR_ULANG_GANJIL,
+                PaymentType::CODE_DAFTAR_ULANG,
+                'DAFTAR_ULANG',
+            ])->orWhere('name', 'like', '%Daftar Ulang%')->first();
 
             $billsCreatedCount = 0;
             if ($daftarUlangType) {
