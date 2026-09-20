@@ -18,8 +18,8 @@
 | Payment Gateway | Midtrans Snap API & Webhook Notification Listener |
 | PDF Generator Engine | DomPDF (`barryvdh/laravel-dompdf`) |
 | Spreadsheet Engine | PhpSpreadsheet (`phpoffice/phpspreadsheet`) |
-| Code Styling & Linter | Laravel Pint (155 files formatted) |
-| Automated Test Suite | Pest PHP / PHPUnit (48 tests, 175 assertions) |
+| Code Styling & Linter | Laravel Pint (156 files formatted) |
+| Automated Test Suite | Pest PHP / PHPUnit (49 tests, 185 assertions) |
 
 ---
 
@@ -98,23 +98,26 @@ Sistem mengimplementasikan otentikasi kustom yang menerima identifier berupa **E
 
 # 4. Tata Kelola Profil & Tanda Tangan Digital Bendahara
 
-### 4.1 Arsitektur Tanda Tangan Digital & Redirect Profil
+### 4.1 Arsitektur Tanda Tangan Digital, Redirect Profil & Snapshot Historis (Document Immutability)
 Tanda tangan digital bendahara dikelola secara dinamis melalui halaman Profile (`/admin/profile`):
 - Berkas tanda tangan disimpan di disk privat/publik (`storage/app/public/signatures/...`).
-- Model `User` menyediakan *helper method* untuk mengambil data tanda tangan dalam format Base64 yang siap dirender secara instan oleh DomPDF tanpa kendala URL lokal:
+- Model `User`, `Invoice`, dan `Receipt` menyediakan *helper method* `getSignatureBase64()` untuk mengambil data tanda tangan dalam format Base64 yang siap dirender secara instan oleh DomPDF tanpa kendala URL lokal:
   ```php
   public function getSignatureBase64(): ?string
   {
-      if (!$this->signature_path || !Storage::disk('public')->exists($this->signature_path)) {
+      if (!$this->treasurer_signature_path || !Storage::disk('public')->exists($this->treasurer_signature_path)) {
           return null;
       }
-      $image = Storage::disk('public')->get($this->signature_path);
-      $mime = Storage::disk('public')->mimeType($this->signature_path);
+      $image = Storage::disk('public')->get($this->treasurer_signature_path);
+      $mime = Storage::disk('public')->mimeType($this->treasurer_signature_path);
       return 'data:' . $mime . ';base64,' . base64_encode($image);
   }
   ```
 - **Auto-Redirect Handler**: `app/Filament/Pages/Auth/EditProfile.php` meng-override `getRedirectUrl(): ?string` untuk mengarahkan pengguna langsung kembali ke URL dashboard Filament (`filament()->getUrl()`) sesaat setelah penyimpanan profil berhasil.
-- Dokumen PDF (`receipt.blade.php` dan `invoice.blade.php`) secara otomatis menggunakan tanda tangan dan nama bendahara aktif dari `User::getActiveTreasurer()`.
+- **Historical Snapshotting (Document Immutability)**:
+  - Saat `Invoice` atau `Receipt` dibuat (`creating` lifecycle hook), sistem mengunci `treasurer_name` dan `treasurer_signature_path` dari bendahara aktif saat itu ke dalam basis data.
+  - Saat terjadi pergantian bendahara di masa depan (misal dari Bu Putri ke Pak Putra), dokumen-dokumen yang diterbitkan di era Bu Putri akan **tetap abadi** menampilkan nama dan tanda tangan Bu Putri saat dibuka atau dicetak ulang kapan saja.
+  - Dokumen baru yang terbit setelah pergantian otomatis mengunci nama dan tanda tangan pejabat baru (Pak Putra).
 
 ---
 
@@ -220,7 +223,7 @@ c:\Projects\administrasi-pondok\
 │   ├── school.php              # Konfigurasi Identitas Madrasah, Bank BRI, Default Due Date
 │   └── midtrans.php            # Konfigurasi Midtrans Server & Client Keys
 ├── database/
-│   ├── migrations/             # 25 file migrasi database
+│   ├── migrations/             # 26 file migrasi database
 │   └── seeders/                # DatabaseSeeder, AcademicYearSeeder, PaymentTypeSeeder, dll.
 ├── resources/
 │   └── views/
@@ -229,5 +232,5 @@ c:\Projects\administrasi-pondok\
 ├── routes/
 │   ├── web.php                 # Web & Portal Routes
 │   └── api.php                 # Midtrans Webhook Route
-└── tests/                      # 48 Automated Test Suites (Pest / PHPUnit)
+└── tests/                      # 49 Automated Test Suites (Pest / PHPUnit)
 ```

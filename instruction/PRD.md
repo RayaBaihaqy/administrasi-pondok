@@ -145,11 +145,12 @@ Struktur madrasah terdiri atas 3 jenjang kelas MTs dengan pembagian rombel khusu
   1. **Nama Bendahara**: Nama lengkap dan gelar pejabat bendahara aktif.
   2. **Tanda Tangan Digital**: Upload berkas gambar tanda tangan (format PNG/JPG transparan).
 - **Auto-Redirect ke Dashboard**: Setelah proses penyimpanan profil bendahara berhasil, sistem secara otomatis mengarahkan admin kembali ke **Dashboard Utama** (`/admin`).
-- **Dampak Finansial & Dokumen**:
-  - Nama dan tanda tangan digital ini secara dinamis dirender ke seluruh berkas PDF:
+- **Dampak Finansial & Dokumen (Historical Snapshot & Document Immutability)**:
+  - Nama dan tanda tangan digital ini secara otomatis di-snapshot ke record Invoice dan Kuitansi saat dokumen pertama kali diterbitkan:
     - **Kuitansi Pembayaran Sah** (`/docs/receipt/{no}`)
     - **Invoice Tagihan Resmi** (`/docs/invoice/{no}`)
-  - Pergantian bendahara tidak merusak kuitansi lama dan langsung memberlakukan tanda tangan baru pada dokumen berikutnya.
+  - **Integritas Arsip Historis**: Dokumen yang telah terbit di masa jabatan bendahara sebelumnya (misal: "Bu Putri") akan **secara permanen tetap mencantumkan nama dan tanda tangan Bu Putri**.
+  - Saat terjadi pergantian bendahara aktif (misal: "Pak Putra"), dokumen-dokumen baru yang diterbitkan setelah pergantian tersebut akan otomatis menggunakan nama dan tanda tangan Pak Putra.
 
 ---
 
@@ -188,7 +189,7 @@ Struktur madrasah terdiri atas 3 jenjang kelas MTs dengan pembagian rombel khusu
 ### 8.3 Kuitansi & Invoice PDF Resmi
 - Format nomor kuitansi unik: `PAY-MAN-{NIS}-{YYYYMMDD}-{RAND}` atau `PAY-MID-{NIS}-{YYYYMMDD}-{RAND}`.
 - Format nomor invoice: `INV-{NIS}-{YYYYMM}-{RAND}`.
-- Memuat kop surat resmi yayasan, stempel bulat digital madrasah, tanda tangan digital bendahara, dan nominal terbilang bahasa Indonesia.
+- Memuat kop surat resmi yayasan, stempel bulat digital madrasah, tanda tangan digital bendahara (historical snapshot), dan nominal terbilang bahasa Indonesia.
 
 ---
 
@@ -220,5 +221,5 @@ Struktur madrasah terdiri atas 3 jenjang kelas MTs dengan pembagian rombel khusu
 
 # 11. Kualitas & Pengujian Otomatis
 
-- Seluruh alur bisnis dilindungi oleh rangkaian uji otomatis (*Automated Test Suite*): **48 Tests, 175 Assertions Passing 100%**.
+- Seluruh alur bisnis dilindungi oleh rangkaian uji otomatis (*Automated Test Suite*): **49 Tests, 185 Assertions Passing 100%**.
 - Standar penulisan kode terstandarisasi dengan **Laravel Pint**.

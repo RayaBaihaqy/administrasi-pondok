@@ -138,10 +138,13 @@ Sistem mengunci 11 kategori pos pembayaran resmi beserta nominal bakunya:
 
 # 6. Aturan Dokumen PDF & Tanda Tangan Bendahara
 
-### 6.1 Tanda Tangan Digital Bendahara
+### 6.1 Tanda Tangan Digital Bendahara & Historical Snapshot (Document Immutability)
 - Nama resmi dan tanda tangan digital bendahara dikelola di `/admin/profile`.
-- Setiap kali invoice (`/docs/invoice/{no}`) atau kuitansi sah (`/docs/receipt/{no}`) di-generate, sistem wajib mengambil nama dan tanda tangan bendahara aktif saat ini secara dinamis.
-- Gambar tanda tangan dirender menggunakan format Base64 untuk performa instan pada DomPDF.
+- **Aturan Immutabilitas Dokumen (Historical Snapshotting)**:
+  - Setiap kali Invoice atau Kuitansi baru dibuat, sistem wajib melakukan **snapshot** permanen atas `treasurer_name` dan `treasurer_signature_path` dari profil bendahara yang sedang aktif ke tabel `invoices` dan `receipts`.
+  - Dokumen masa lalu yang terbit saat masa jabatan bendahara terdahulu (misal: "Bu Putri") **wajib selamanya mencetak nama dan tanda tangan Bu Putri** tanpa terpengaruh perubahan profil di masa mendatang.
+  - Dokumen baru yang terbit setelah pergantian bendahara baru (misal: "Pak Putra") otomatis mengunci nama dan tanda tangan Pak Putra.
+  - Gambar tanda tangan dirender menggunakan format Base64 (`$receipt->getSignatureBase64()` / `$invoice->getSignatureBase64()`) untuk performa instan dan rendering bebas hambatan pada DomPDF.
 
 ### 6.2 Nomor Dokumen Unik
 - Nomor Invoice: `INV-{NIS}-{YYYYMM}-{RAND}`
@@ -160,5 +163,5 @@ Sistem mengunci 11 kategori pos pembayaran resmi beserta nominal bakunya:
 
 # 8. Aturan Uji Otomatis & Pemeliharaan Kode
 
-- Seluruh alur kerja sistem wajib tercover oleh rangkaian pengujian otomatis (*Automated Test Suite*): **48 Tests Passing 100%**.
-- Kode PHP wajib diformat mengikuti standar PSR-12 menggunakan **Laravel Pint** (155 files clean).
+- Seluruh alur kerja sistem wajib tercover oleh rangkaian pengujian otomatis (*Automated Test Suite*): **49 Tests Passing 100% (185 Assertions)**.
+- Kode PHP wajib diformat mengikuti standar PSR-12 menggunakan **Laravel Pint** (156 files clean).

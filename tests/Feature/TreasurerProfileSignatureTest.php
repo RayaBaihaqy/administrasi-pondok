@@ -84,4 +84,49 @@ class TreasurerProfileSignatureTest extends TestCase
             ->assertHasNoFormErrors()
             ->assertRedirect(filament()->getUrl());
     }
+
+    public function test_historical_receipt_and_invoice_preserve_past_treasurer_snapshot(): void
+    {
+        $superadmin = User::where('role', User::ROLE_SUPER_ADMIN)->first();
+        $this->assertNotNull($superadmin);
+
+        // 1. Era Bu Putri
+        $superadmin->update(['name' => 'Bu Putri, S. Pd']);
+        $documentService = new DocumentService;
+
+        $bill1 = Bill::first();
+        $this->assertNotNull($bill1);
+        $invoice1 = $documentService->getOrCreateInvoice($bill1);
+        $this->assertEquals('Bu Putri, S. Pd', $invoice1->treasurer_name);
+
+        $payment1 = Payment::first();
+        $this->assertNotNull($payment1);
+        $receipt1 = $documentService->getOrCreateReceipt($payment1);
+        $this->assertEquals('Bu Putri, S. Pd', $receipt1->treasurer_name);
+
+        // 2. Pergantian Pejabat ke Pak Putra
+        $superadmin->update(['name' => 'Pak Putra, M. Pd']);
+        $this->assertEquals('Pak Putra, M. Pd', User::getActiveTreasurer()?->name);
+
+        // 3. Dokumen lama dibuka kembali -> HARUS TETAP Bu Putri
+        $invoice1->refresh();
+        $this->assertEquals('Bu Putri, S. Pd', $invoice1->treasurer_name);
+        $receipt1->refresh();
+        $this->assertEquals('Bu Putri, S. Pd', $receipt1->treasurer_name);
+
+        // Render PDF dokumen era Bu Putri
+        $receiptPdf = $documentService->generatePaymentReceiptPdf($payment1);
+        $receiptHtml = $receiptPdf->output();
+        $this->assertNotEmpty($receiptHtml);
+
+        // 4. Dokumen baru terbit di era Pak Putra
+        $bill2 = Bill::skip(1)->first();
+        if ($bill2) {
+            // Delete invoice if already cached to test fresh generation
+            $bill2->invoice?->delete();
+            $bill2->unsetRelation('invoice');
+            $invoice2 = $documentService->getOrCreateInvoice($bill2);
+            $this->assertEquals('Pak Putra, M. Pd', $invoice2->treasurer_name);
+        }
+    }
 }

@@ -233,10 +233,10 @@ Menyimpan catatan transaksi pembayaran yang berhasil masuk (baik via loket kasir
 ---
 
 ## 3.10 `invoices` & `receipts`
-Menyimpan arsip dokumen PDF resmi tagihan dan kuitansi pembayaran.
+Menyimpan arsip dokumen PDF resmi tagihan dan kuitansi pembayaran beserta snapshot historis pejabat bendahara (Immutability).
 
-- **`invoices`**: `id`, `invoice_number` (UNIQUE), `bill_id` (FK), `file_path`, `issued_at`, timestamps.
-- **`receipts`**: `id`, `receipt_number` (UNIQUE), `payment_id` (FK), `file_path`, `issued_at`, timestamps.
+- **`invoices`**: `id`, `invoice_number` (UNIQUE), `bill_id` (FK), `file_path`, `treasurer_name` (Snapshot Nama), `treasurer_signature_path` (Snapshot TTD), `generated_at`, timestamps.
+- **`receipts`**: `id`, `receipt_number` (UNIQUE), `payment_id` (FK), `file_path`, `treasurer_name` (Snapshot Nama), `treasurer_signature_path` (Snapshot TTD), `generated_at`, timestamps.
 
 ---
 

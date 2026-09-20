@@ -439,9 +439,9 @@
                         <div style="font-weight: bold; margin-top: 3px;">Bendahara MTs Miftahul 'Ulum,</div>
                         @php
                             $treasurerUser = \App\Models\User::getActiveTreasurer();
-                            $treasurerName = $treasurerUser?->name ?? config('school.treasurer_name', 'Hj. Titi Nurhayati, S. Pd');
+                            $treasurerName = $receipt?->treasurer_name ?? $treasurerUser?->name ?? config('school.treasurer_name', 'Hj. Titi Nurhayati, S. Pd');
 
-                            $sigBase64 = $treasurerUser?->getSignatureBase64();
+                            $sigBase64 = $receipt?->getSignatureBase64() ?? $treasurerUser?->getSignatureBase64();
                             if (!$sigBase64) {
                                 $sigPath = public_path('images/signature.png');
                                 $sigBase64 = file_exists($sigPath) ? 'data:image/png;base64,' . base64_encode(file_get_contents($sigPath)) : null;

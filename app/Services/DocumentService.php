@@ -19,8 +19,17 @@ class DocumentService
     {
         $payment->loadMissing(['student.parentProfile', 'bill.paymentType', 'bill.academicYear', 'bill.billItems', 'recorder', 'receipt']);
 
-        $receipt = $payment->receipt;
-        $receiptNumber = $receipt?->receipt_number ?? ($payment->payment_number ?? ('PAY-'.str_pad((string) $payment->id, 6, '0', STR_PAD_LEFT)));
+        $receipt = $payment->receipt ?? Receipt::where('payment_id', $payment->id)->first();
+        if (! $receipt) {
+            $receipt = Receipt::create([
+                'payment_id' => $payment->id,
+                'receipt_number' => $payment->payment_number ?? ('PAY-'.str_pad((string) $payment->id, 6, '0', STR_PAD_LEFT)),
+                'generated_at' => now(),
+            ]);
+            $payment->setRelation('receipt', $receipt);
+        }
+
+        $receiptNumber = $receipt->receipt_number ?? ($payment->payment_number ?? ('PAY-'.str_pad((string) $payment->id, 6, '0', STR_PAD_LEFT)));
         $printDate = now()->translatedFormat('d F Y');
 
         $pdf = Pdf::loadView('pdf.receipt', [
@@ -82,18 +91,22 @@ class DocumentService
             return $payment->receipt;
         }
 
-        $receiptNumber = 'REC-'.now()->format('Ymd').'-'.Str::upper(Str::random(6));
+        $receiptNumber = $payment->payment_number ?? ('REC-'.now()->format('Ymd').'-'.Str::upper(Str::random(6)));
         $filePath = 'receipts/'.$receiptNumber.'.pdf';
 
-        $pdf = $this->generatePaymentReceiptPdf($payment);
-        Storage::disk('public')->put($filePath, $pdf->output());
-
-        return Receipt::create([
+        $receipt = Receipt::create([
             'payment_id' => $payment->id,
             'receipt_number' => $receiptNumber,
             'file_path' => $filePath,
             'generated_at' => now(),
         ]);
+
+        $payment->setRelation('receipt', $receipt);
+
+        $pdf = $this->generatePaymentReceiptPdf($payment);
+        Storage::disk('public')->put($filePath, $pdf->output());
+
+        return $receipt;
     }
 
     /**
@@ -101,7 +114,7 @@ class DocumentService
      */
     public function generateInvoicePdf(Bill $bill)
     {
-        $bill->loadMissing(['student', 'paymentType', 'academicYear', 'parentProfile']);
+        $bill->loadMissing(['student', 'paymentType', 'academicYear', 'parentProfile', 'invoice']);
         $invoice = $this->getOrCreateInvoice($bill);
         $printDate = now()->translatedFormat('d F Y');
 
@@ -123,16 +136,18 @@ class DocumentService
             return $bill->invoice;
         }
 
-        $invoiceNumber = 'INV-'.now()->format('Ym').'-'.Str::upper(Str::random(6));
+        $invoiceNumber = $bill->bill_number ?? ('INV-'.now()->format('Ym').'-'.Str::upper(Str::random(6)));
         $filePath = 'invoices/'.$invoiceNumber.'.pdf';
         $printDate = now()->translatedFormat('d F Y');
 
-        $invoice = new Invoice([
+        $invoice = Invoice::create([
             'bill_id' => $bill->id,
             'invoice_number' => $invoiceNumber,
             'file_path' => $filePath,
             'generated_at' => now(),
         ]);
+
+        $bill->setRelation('invoice', $invoice);
 
         $pdf = Pdf::loadView('pdf.invoice', [
             'bill' => $bill,
@@ -141,7 +156,6 @@ class DocumentService
         ]);
 
         Storage::disk('public')->put($filePath, $pdf->output());
-        $invoice->save();
 
         return $invoice;
     }

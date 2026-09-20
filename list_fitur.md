@@ -22,8 +22,11 @@ Super Admin memiliki hak akses tertinggi di sistem dengan wewenang mengelola kon
 2. **Manajemen Profil & Tanda Tangan Digital Bendahara (Halaman Profile `/admin/profile`)**
    * Pembaruan Nama Resmi Bendahara dan unggah Tanda Tangan Digital (format PNG/JPG transparan).
    * **Auto-Redirect ke Dashboard**: Setelah proses penyimpanan profil bendahara berhasil, sistem otomatis mengarahkan admin kembali ke **Dashboard Utama** (`/admin`).
-   * Integrasi otomatis tanda tangan digital dan nama bendahara ke seluruh dokumen PDF yang di-generate (Invoice Tagihan dan Kuitansi Pembayaran Sah).
-   * Mendukung pergantian pejabat bendahara kapan saja tanpa mengubah kode program.
+   * **Historical Snapshot & Immutabilitas Dokumen PDF**:
+     * Setiap Invoice Tagihan dan Kuitansi Pembayaran yang diterbitkan otomatis mengunci (*snapshot*) nama & tanda tangan bendahara yang aktif saat itu.
+     * Dokumen masa lalu yang terbit pada periode bendahara sebelumnya (misal: "Bu Putri") **tetap permanen bertanda tangan Bu Putri** dan tidak akan berubah ketika bendahara baru (misal: "Pak Putra") menjabat.
+     * Dokumen baru yang terbit setelah pergantian bendahara otomatis menggunakan nama & tanda tangan Pak Putra.
+   * Mendukung pergantian pejabat bendahara kapan saja secara dinamis.
 
 3. **Manajemen Master Tahun Ajaran & Status Periode Aktif**
    * Pembuatan dan pengelolaan data tahun ajaran baru secara intuitif (cukup input Tanggal Mulai dan Tanggal Selesai, nama tahun ajaran seperti `2026/2027` digenerate otomatis).

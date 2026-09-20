@@ -34,7 +34,7 @@ Sistem ini dibangun dengan arsitektur **Modular Monolith Enterprise** menggunaka
 | **PDF Document** | DomPDF | `^3.1` | Generasi Invoice, Kuitansi Berstempel & Rekapitulasi PDF |
 | **Spreadsheet Engine**| PhpSpreadsheet | `^5.9` | Generator Template Native `.xlsx` & Universal Spreadsheet Parser |
 | **Database** | MySQL | `>= 8.0` | Relational Database Storage dengan Indexing Optimal |
-| **Testing Suite** | PHPUnit | `^11.5` | Automated Unit & Feature Testing (**48/48 Passing, 175 assertions — 100%**) |
+| **Testing Suite** | PHPUnit | `^11.5` | Automated Unit & Feature Testing (**49/49 Passing, 185 assertions — 100%**) |
 
 ---
 
@@ -74,7 +74,11 @@ Seluruh identitas lembaga dan informasi rekening pembayaran terpusat pada file k
   * **Nama Bendahara**: Nama lengkap & gelar resmi bendahara.
   * **Upload Tanda Tangan (TTD)**: Unggah file foto/scan tanda tangan (PNG/JPG transparan).
   * **Auto-Redirect**: Setelah data profil dan TTD disimpan, sistem otomatis mengarahkan admin kembali ke **Dashboard Utama**.
-* **Integrasi Dinamis**: Seluruh Kuitansi Pembayaran PDF dan Surat Tagihan/Invoice PDF yang di-generate otomatis langsung memakai nama dan tanda tangan terbaru yang diunggah.
+* **Historical Snapshot & Immutabilitas Dokumen**:
+  * Setiap Invoice & Kuitansi mengunci (*snapshot*) nama dan tanda tangan bendahara yang aktif pada saat dokumen diterbitkan.
+  * Dokumen masa lalu yang terbit pada era pejabat bendahara terdahulu (misal: "Bu Putri") **tetap permanen bertanda tangan Bu Putri**.
+  * Dokumen baru yang terbit setelah pergantian bendahara baru (misal: "Pak Putra") secara otomatis mengunci nama & tanda tangan Pak Putra.
+* **Integrasi PDF Instan**: Render tanda tangan berbasis Base64 memastikan file PDF kuitansi dan tagihan ter-generate sangat cepat tanpa kendala akses path storage.
 
 ### 3. Manajemen Mutasi Siswa (Siswa Pindah) & Pembatalan Tagihan Otomatis
 * **Aksi 1-Klik `[ Mutasi / Pindah ]`**: Mengubah status siswa aktif menjadi **Keluar / Pindah (`withdrawn`)** dengan modal konfirmasi interaktif.
@@ -197,10 +201,10 @@ administrasi-pondok/
 │   ├── Providers/Filament/                      # AdminPanelProvider & ParentPanelProvider
 │   └── Services/                                # BillingService, PaymentService, StudentImportService, DocumentService, TransitionService, WhatsAppAutomationService
 ├── database/
-│   ├── migrations/                              # 25 Database Migrations
+│   ├── migrations/                              # 26 Database Migrations
 │   └── seeders/                                 # DatabaseSeeder, UserSeeder, AcademicYearSeeder, PaymentTypeSeeder, BillSeeder
 ├── resources/views/pdf/                         # Template DomPDF Invoice, Receipt & Laporan
-└── tests/                                       # 48 Automated Unit & Feature Tests
+└── tests/                                       # 49 Automated Unit & Feature Tests
 ```
 
 ---
@@ -236,4 +240,4 @@ Jalankan seluruh test suite dengan perintah:
 ```bash
 php artisan test
 ```
-**Status: 48 tests passed, 175 assertions (100% PASS)**
+**Status: 49 tests passed, 185 assertions (100% PASS)**
