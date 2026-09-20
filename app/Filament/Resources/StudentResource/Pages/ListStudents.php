@@ -3,16 +3,47 @@
 namespace App\Filament\Resources\StudentResource\Pages;
 
 use App\Filament\Resources\StudentResource;
+use App\Models\Student;
 use App\Services\StudentImportService;
 use Filament\Actions;
 use Filament\Forms;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Schemas\Components\Tabs\Tab;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Storage;
 
 class ListStudents extends ListRecords
 {
     protected static string $resource = StudentResource::class;
+
+    public function getTabs(): array
+    {
+        return [
+            'active' => Tab::make('Siswa Aktif')
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('status', Student::STATUS_ACTIVE))
+                ->badge(fn () => Student::where('status', Student::STATUS_ACTIVE)->count())
+                ->badgeColor('success'),
+
+            'withdrawn' => Tab::make('Siswa Mutasi / Pindah')
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('status', Student::STATUS_WITHDRAWN))
+                ->badge(fn () => Student::where('status', Student::STATUS_WITHDRAWN)->count())
+                ->badgeColor('warning'),
+
+            'graduated' => Tab::make('Alumni / Lulus')
+                ->modifyQueryUsing(fn (Builder $query) => $query->where('status', Student::STATUS_GRADUATED))
+                ->badge(fn () => Student::where('status', Student::STATUS_GRADUATED)->count())
+                ->badgeColor('info'),
+
+            'all' => Tab::make('Semua Siswa')
+                ->badge(fn () => Student::count()),
+        ];
+    }
+
+    public function getDefaultActiveTab(): string|int|null
+    {
+        return 'active';
+    }
 
     protected function getHeaderActions(): array
     {

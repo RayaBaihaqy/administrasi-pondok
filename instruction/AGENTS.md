@@ -28,7 +28,7 @@ Sebelum melakukan perubahan kode pada repository ini, Agent wajib memahami struk
 | Excel Engine | PhpSpreadsheet (`ext-zip`) | Wajib format sel eksplisit (Number 0 desimal untuk ID/angka) |
 | PDF Engine | DomPDF | Render via Blade template dengan Base64 image encoding |
 | Linter | Laravel Pint | Jalankan `./vendor/bin/pint` sebelum menyelesaikan task |
-| Test Suite | Pest PHP / PHPUnit | Wajib 100% lulus (**44 Tests, 153 Assertions**) |
+| Test Suite | Pest PHP / PHPUnit | Wajib 100% lulus (**48 Tests, 175 Assertions**) |
 
 ---
 
@@ -65,6 +65,7 @@ Pembuatan tahun ajaran baru cukup menerima `start_date` dan `end_date`. Nama tah
 
 ### 3.6 Profil & Tanda Tangan Digital Bendahara
 Halaman Profile staf di `/admin/profile` (label "Profile") mengelola `name` dan `signature_path` pada tabel `users`.
+Setelah penyimpanan profil berhasil, sistem mengarahkan admin kembali ke dashboard utama (`/admin`).
 Dokumen PDF (`receipt.blade.php` & `invoice.blade.php`) secara dinamis mengambil data bendahara aktif via `User::getActiveTreasurer()->getSignatureBase64()`.
 
 ### 3.7 Autentikasi Ganda (Dual Identifier Login)
@@ -78,6 +79,12 @@ Login mendukung Email atau Nomor Telepon (`08xx`, `+628xx`, `628xx`) dengan pesa
 - NISM, Tingkat Kelas, dan Tahun Masuk diformat sebagai Number (0 Desimal).
 - NISN dan No. Telepon diformat sebagai Teks.
 - Parser import wajib membaca nilai string numerik bersih untuk menghindari notasi ilmiah `e+17`.
+- Penanganan akun orang tua untuk beberapa anak kandung (*siblings*) harus dihubungkan ke 1 entitas parent (`firstOrCreate`).
+
+### 3.9 Manajemen Mutasi Siswa (Siswa Pindah)
+- Mutasi siswa (`mutateOut`) mengubah status siswa menjadi `withdrawn`, membatalkan tagihan belum lunas (`unpaid`/`overdue` ➡️ `cancelled`), dan mengunci tagihan/kuitansi yang sudah lunas (`paid`) untuk laporan audit keuangan tahunan.
+- Siswa `withdrawn` dilarang dimasukkan ke penerbitan tagihan SPP bulanan otomatis berikutnya.
+- Log mutasi dan pengaktifan kembali dicatat ke `audit_logs`.
 
 ---
 
@@ -94,5 +101,5 @@ Saat melakukan penambahan atau modifikasi fitur, ikuti urutan kerja:
    ```powershell
    php artisan test
    ```
-   Pastikan seluruh **44 tests** berstatus hijau (PASS).
+   Pastikan seluruh **48 tests** berstatus hijau (PASS).
 5. **Penyelarasan Dokumentasi**: Pastikan seluruh berkas `.md` tetap selaras dengan perubahan kode yang dilakukan.

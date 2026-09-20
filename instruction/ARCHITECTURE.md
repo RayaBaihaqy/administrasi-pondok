@@ -18,8 +18,8 @@
 | Payment Gateway | Midtrans Snap API & Webhook Notification Listener |
 | PDF Generator Engine | DomPDF (`barryvdh/laravel-dompdf`) |
 | Spreadsheet Engine | PhpSpreadsheet (`phpoffice/phpspreadsheet`) |
-| Code Styling & Linter | Laravel Pint (154 files formatted) |
-| Automated Test Suite | Pest PHP / PHPUnit (44 tests, 153 assertions) |
+| Code Styling & Linter | Laravel Pint (155 files formatted) |
+| Automated Test Suite | Pest PHP / PHPUnit (48 tests, 175 assertions) |
 
 ---
 
@@ -98,7 +98,7 @@ Sistem mengimplementasikan otentikasi kustom yang menerima identifier berupa **E
 
 # 4. Tata Kelola Profil & Tanda Tangan Digital Bendahara
 
-### 4.1 Arsitektur Tanda Tangan Digital
+### 4.1 Arsitektur Tanda Tangan Digital & Redirect Profil
 Tanda tangan digital bendahara dikelola secara dinamis melalui halaman Profile (`/admin/profile`):
 - Berkas tanda tangan disimpan di disk privat/publik (`storage/app/public/signatures/...`).
 - Model `User` menyediakan *helper method* untuk mengambil data tanda tangan dalam format Base64 yang siap dirender secara instan oleh DomPDF tanpa kendala URL lokal:
@@ -113,6 +113,7 @@ Tanda tangan digital bendahara dikelola secara dinamis melalui halaman Profile (
       return 'data:' . $mime . ';base64,' . base64_encode($image);
   }
   ```
+- **Auto-Redirect Handler**: `app/Filament/Pages/Auth/EditProfile.php` meng-override `getRedirectUrl(): ?string` untuk mengarahkan pengguna langsung kembali ke URL dashboard Filament (`filament()->getUrl()`) sesaat setelah penyimpanan profil berhasil.
 - Dokumen PDF (`receipt.blade.php` dan `invoice.blade.php`) secara otomatis menggunakan tanda tangan dan nama bendahara aktif dari `User::getActiveTreasurer()`.
 
 ---
@@ -134,7 +135,7 @@ Tanda tangan digital bendahara dikelola secara dinamis melalui halaman Profile (
   11. `AKHIR_TAHUN`: Rp 2.000.000 (Kelas 9)
 - **Resolusi Harga Berlaku (Effective Price Resolution)**:
   ```text
-  Student Price Override ──> Class/Rombel Price Matrix ──> Payment Type Default
+  Class + Rombel Price Matrix ──> Class Price Matrix ──> Academic Year Price ──> Payment Type Default
   ```
 
 ### 5.2 Skema Cicilan (Installment Engine - Sistem A)
@@ -154,6 +155,17 @@ Tanda tangan digital bendahara dikelola secara dinamis melalui halaman Profile (
   - Tingkat 8 $\rightarrow$ Rombel 8.1, 8.2, 8.3, 8.4
   - Tingkat 9 $\rightarrow$ Rombel 9.1, 9.2, 9.3, 9.4
 - Pembuatan tahun ajaran baru secara otomatis menghitung nama tahun dari rentang tanggal (`start_date` dan `end_date`), mengaktifkan periode baru, menaikkan tingkat kelas siswa aktif, dan meluluskan siswa tingkat 9.
+
+### 5.5 Manajemen Mutasi Siswa (Student Mutation Engine)
+- **Metode Model Domain**: `Student::mutateOut(string $reason, ?string $date)` & `Student::revertMutation()`.
+- **Transisi Status & Pembatalan Tagihan**:
+  ```text
+  [Active Student] ──(mutateOut)──> [Withdrawn Student]
+                                          │
+                                          ├── Unpaid/Overdue Bills ──> Cancelled (notes appended)
+                                          └── Paid Bills / Payments ──> Locked / Preserved for Audit
+  ```
+- **Filter Header Tabs**: `ListStudents` menggunakan `Filament\Schemas\Components\Tabs\Tab` untuk mengelompokkan `active`, `withdrawn`, `graduated`, dan `all` dengan penghitung query terindeks.
 
 ---
 
@@ -217,5 +229,5 @@ c:\Projects\administrasi-pondok\
 ├── routes/
 │   ├── web.php                 # Web & Portal Routes
 │   └── api.php                 # Midtrans Webhook Route
-└── tests/                      # 44 Automated Test Suites (Pest / PHPUnit)
+└── tests/                      # 48 Automated Test Suites (Pest / PHPUnit)
 ```

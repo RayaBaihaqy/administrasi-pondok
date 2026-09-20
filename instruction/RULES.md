@@ -25,10 +25,10 @@ Apabila terjadi keraguan dalam implementasi, urutan prioritas yang wajib dipatuh
   - Mengubah matriks tarif pada 11 pos pembayaran resmi.
   - Memulai tahun ajaran baru dan mengeksekusi kenaikan kelas massal.
   - Mengakses log Audit Trail sistem yang bersifat permanen (*immutable*).
-  - Mengelola profil dan memperbarui tanda tangan digital bendahara pada menu `Profile` (`/admin/profile`).
+  - Mengelola profil dan memperbarui tanda tangan digital bendahara pada menu `Profile` (`/admin/profile`). Setelah simpan berhasil, sistem secara otomatis mengarahkan admin kembali ke dashboard utama (`/admin`).
 
 ### 2.2 Role Admin (Operator Keuangan / Kasir)
-- Menjalankan operasional pencatatan harian, mengimpor siswa via Excel `.xlsx`, menerbitkan tagihan, dan menerima pembayaran kasir offline.
+- Menjalankan operasional pencatatan harian, mengimpor siswa via Excel `.xlsx`, menerbitkan tagihan, mutasi siswa pindah, dan menerima pembayaran kasir offline.
 - **Batasan**: Tidak berhak mengubah master tarif nominal pos pembayaran dan tidak dapat melihat log audit sistem.
 
 ### 2.3 Role Parent (Orang Tua / Wali Santri)
@@ -54,9 +54,9 @@ Madrasah memiliki 3 tingkat kelas dengan pembagian rombel yang terikat:
 - **Tingkat 9**: Rombel yang sah hanya `9.1`, `9.2`, `9.3`, dan `9.4`.
 - Sistem **menolak** penyimpanan data siswa jika rombel yang dipilih tidak sesuai dengan tingkat kelasnya.
 
-### 3.2 Status Siswa Default
+### 3.2 Status Siswa Default & Status yang Didukung
 - Setiap penambahan siswa baru (baik manual maupun via import) secara otomatis memiliki status **Aktif** (`active`).
-- Status yang didukung sistem: `active` (Aktif), `graduated` (Lulus), `transferred` (Pindah/Keluar), dan `inactive` (Nonaktif).
+- Status yang didukung sistem: `active` (Aktif), `withdrawn` (Mutasi / Pindah), `graduated` (Alumni / Lulus), dan `inactive` (Nonaktif).
 - Hanya siswa dengan status `active` yang menjadi target penerbitan tagihan otomatis.
 
 ### 3.3 Aturan Import Siswa Massal Native Excel (.xlsx)
@@ -64,7 +64,7 @@ Madrasah memiliki 3 tingkat kelas dengan pembagian rombel yang terikat:
 - Kolom `NISM`, `Tingkat Kelas`, dan `Tahun Masuk` diformat sebagai Number (0 Desimal).
 - Kolom `NISN` dan `No. WhatsApp / HP Orang Tua` diformat sebagai Teks untuk menjaga integritas digit nol di depan.
 - Parser import wajib memproses teks numerik bersih untuk menghindari notasi ilmiah `e+17`.
-- Sistem secara otomatis membuatkan akun login wali santri (*auto-provisioning parent user*) berdasarkan nomor telepon/email siswa yang diimpor.
+- Sistem secara otomatis membuatkan akun login wali santri (*auto-provisioning parent user*) berdasarkan nomor telepon/email siswa yang diimpor. Jika orang tua memiliki beberapa anak (saudara kandung / *siblings*), akun digabungkan ke 1 profil wali.
 
 ### 3.4 Transisi Tahun Ajaran Baru & Kenaikan Kelas
 - Form pembuatan tahun ajaran baru hanya memerlukan input `start_date` dan `end_date`. Nama tahun ajaran (contoh: `2026/2027`) digenerate otomatis.
@@ -74,6 +74,15 @@ Madrasah memiliki 3 tingkat kelas dengan pembagian rombel yang terikat:
   - Siswa Kelas 9 aktif otomatis diubah statusnya menjadi Lulus (`graduated`).
   - Pengecualian tinggal kelas dicatat via repeater khusus dan tidak dinaikkan tingkatnya.
   - Seluruh riwayat kenaikan dicatat ke tabel `student_academic_years`.
+
+### 3.5 Aturan Mutasi Siswa (Siswa Pindah / Keluar)
+- Eksekusi mutasi siswa keluar (`Student::mutateOut($reason, $date)`):
+  - Mengubah status siswa dari `active` menjadi `withdrawn`.
+  - Mengubah status seluruh tagihan yang belum lunas (`unpaid` dan `overdue`) menjadi `cancelled` (`outstanding_amount = 0`) dengan melampirkan catatan alasan mutasi.
+  - Seluruh riwayat tagihan dan pembayaran yang telah lunas (`paid`) **wajib dikunci dan dipertahankan** untuk kebutuhan audit dan rekapitulasi laporan tahunan akuntan yayasan.
+  - Generator tagihan massal SPP bulanan mendatang secara otomatis mengecualikan siswa berstatus `withdrawn`.
+  - Jika terjadi kesalahan administrasi, tersedia aksi `[ Aktifkan Kembali ]` (`Student::revertMutation()`) untuk mengembalikan status siswa menjadi `active`.
+  - Setiap mutasi dan aktivasi kembali wajib dicatat secara lengkap pada `audit_logs`.
 
 ---
 
@@ -95,9 +104,10 @@ Sistem mengunci 11 kategori pos pembayaran resmi beserta nominal bakunya:
 
 ### 4.1 Prioritas Penentuan Tarif (Price Resolution Hierarchy)
 ```text
-1. Student Price Override (Harga Khusus Dispensasi Siswa)
-2. Class Level & Rombel Price Matrix (Matriks Tarif Kelas/Rombel)
-3. Payment Type Default Price (Tarif Bawaan Pos Biaya)
+1. Class Level + Rombel Price Matrix (Matriks Tarif Kelas & Rombel Spesifik)
+2. Class Level Price Matrix (Matriks Tarif per Tingkat Kelas)
+3. Academic Year Default Price (Tarif Bawaan Tahun Ajaran)
+4. Payment Type Default Price (Tarif Bawaan Master Pos Biaya)
 ```
 
 ---
@@ -122,6 +132,7 @@ Sistem mengunci 11 kategori pos pembayaran resmi beserta nominal bakunya:
 - `paid`: Sisa tunggakan $\le 0$.
 - `overdue`: Sisa tunggakan $> 0$ dan $\text{Tanggal Hari Ini} > \text{Jatuh Tempo}$.
 - `unpaid`: Sisa tunggakan $> 0$ dan $\text{Tanggal Hari Ini} \le \text{Jatuh Tempo}$.
+- `cancelled`: Dibatalkan oleh sistem (akibat siswa mutasi keluar atau pembatalan sah).
 
 ---
 
@@ -149,5 +160,5 @@ Sistem mengunci 11 kategori pos pembayaran resmi beserta nominal bakunya:
 
 # 8. Aturan Uji Otomatis & Pemeliharaan Kode
 
-- Seluruh alur kerja sistem wajib tercover oleh rangkaian pengujian otomatis (*Automated Test Suite*): **44 Tests Passing 100%**.
-- Kode PHP wajib diformat mengikuti standar PSR-12 menggunakan **Laravel Pint**.
+- Seluruh alur kerja sistem wajib tercover oleh rangkaian pengujian otomatis (*Automated Test Suite*): **48 Tests Passing 100%**.
+- Kode PHP wajib diformat mengikuti standar PSR-12 menggunakan **Laravel Pint** (155 files clean).

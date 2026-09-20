@@ -17,6 +17,11 @@ class EditProfile extends BaseEditProfile
         return 'Profile';
     }
 
+    protected function getRedirectUrl(): ?string
+    {
+        return filament()->getUrl();
+    }
+
     public function form(Schema $schema): Schema
     {
         return $schema

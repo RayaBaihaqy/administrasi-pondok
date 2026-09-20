@@ -107,8 +107,17 @@ Struktur madrasah terdiri atas 3 jenjang kelas MTs dengan pembagian rombel khusu
 - **Kelas 9**: Rombel `9.1`, `9.2`, `9.3`, `9.4`
 - **Perilaku Form**: Pilihan rombel difilter secara dinamis setelah tingkat kelas dipilih.
 
-### 5.2 Status Siswa Default
-- Saat siswa baru ditambahkan atau diimpor, status otomatis diset ke **Aktif** (`active`).
+### 5.2 Status Siswa & Manajemen Mutasi (Siswa Pindah)
+- **Status Bawaan**: Saat siswa baru ditambahkan atau diimpor, status otomatis diset ke **Aktif** (`active`).
+- **Status yang Didukung**: `active` (Aktif), `withdrawn` (Mutasi / Pindah), `graduated` (Alumni / Lulus), dan `inactive` (Nonaktif).
+- **Alur Mutasi Siswa Keluar / Pindah**:
+  - Super Admin / Admin dapat memicu aksi `[ Mutasi / Pindah ]` dari tabel siswa.
+  - Dialog konfirmasi menampilkan total tagihan belum lunas yang akan dibatalkan, serta meminta input tanggal mutasi dan alasan pindah.
+  - Seluruh tagihan aktif yang belum dibayar (`unpaid` dan `overdue`) otomatis diubah statusnya menjadi **Dibatalkan (`cancelled`)** dengan catatan alasan mutasi.
+  - Seluruh data tagihan dan pembayaran yang sudah lunas (`paid`) **tetap dipertahankan / dikunci** untuk kebutuhan laporan rekapitulasi keuangan tahunan akuntan yayasan.
+  - Siswa berstatus `withdrawn` secara otomatis dikecualikan dari generator tagihan SPP bulanan mendatang.
+  - Tersedia opsi `[ Aktifkan Kembali ]` untuk mengembalikan status siswa menjadi aktif dengan audit trail lengkap.
+- **Header Tabs Filter Status**: Halaman siswa dilengkapi tab filter cepat `🟢 Siswa Aktif`, `🟠 Siswa Mutasi / Pindah`, `🔵 Alumni / Lulus`, dan `Semua Siswa` dengan badge jumlah dinamis.
 
 ### 5.3 Import Data Siswa Massal Native Excel (`.xlsx`)
 - Format file: Microsoft Excel OpenXML Spreadsheet (`.xlsx`).
@@ -117,7 +126,7 @@ Struktur madrasah terdiri atas 3 jenjang kelas MTs dengan pembagian rombel khusu
   - **NISM, Tingkat Kelas, Tahun Masuk**: Format Number (0 Desimal) untuk mencegah notasi ilmiah `e+17`.
   - **NISN, No. Telepon**: Format Text.
   - Header kolom yang bersih: `NISN`, `NISM`, `Nama Lengkap`, `Jenis Kelamin (L/P)`, `Tingkat Kelas`, `Rombel`, `Tahun Masuk`, `Nama Orang Tua / Wali`, `No. WhatsApp / HP Orang Tua`, `Email Orang Tua`, `Alamat`.
-- Otomasi akun: Sistem otomatis membuat akun login orang tua berbasis Nomor HP / Email siswa yang diimpor.
+- Otomasi akun & Multi-anak (*Siblings*): Sistem otomatis membuat akun login orang tua berbasis Nomor HP / Email. Jika orang tua memiliki lebih dari satu anak di madrasah, seluruh anak otomatis ditautkan ke akun orang tua yang sama (*single parent portal*).
 
 ### 5.4 Transisi Tahun Ajaran Baru & Kenaikan Kelas Massal
 - Pembuatan Tahun Ajaran Baru: Super Admin cukup memasukkan `start_date` dan `end_date`, nama tahun ajaran (contoh: `2026/2027`) digenerate otomatis.
@@ -135,6 +144,7 @@ Struktur madrasah terdiri atas 3 jenjang kelas MTs dengan pembagian rombel khusu
 - **Form Input**:
   1. **Nama Bendahara**: Nama lengkap dan gelar pejabat bendahara aktif.
   2. **Tanda Tangan Digital**: Upload berkas gambar tanda tangan (format PNG/JPG transparan).
+- **Auto-Redirect ke Dashboard**: Setelah proses penyimpanan profil bendahara berhasil, sistem secara otomatis mengarahkan admin kembali ke **Dashboard Utama** (`/admin`).
 - **Dampak Finansial & Dokumen**:
   - Nama dan tanda tangan digital ini secara dinamis dirender ke seluruh berkas PDF:
     - **Kuitansi Pembayaran Sah** (`/docs/receipt/{no}`)
@@ -160,6 +170,7 @@ Struktur madrasah terdiri atas 3 jenjang kelas MTs dengan pembagian rombel khusu
 - 🟡 **Belum Bayar (`unpaid`)**: Belum lunas dan belum melewati jatuh tempo.
 - 🟢 **Lunas (`paid`)**: Sisa tagihan telah Rp 0.
 - 🔴 **Terlambat (`overdue`)**: Melewati jatuh tempo dan masih memiliki sisa tunggakan.
+- ⚪ **Dibatalkan (`cancelled`)**: Tagihan dibatalkan secara sistem (misal: akibat siswa mutasi keluar/pindah).
 
 ---
 
@@ -195,7 +206,7 @@ Struktur madrasah terdiri atas 3 jenjang kelas MTs dengan pembagian rombel khusu
 # 10. Audit Trail & Laporan Keuangan
 
 ### 10.1 Audit Trail (Eksklusif Super Admin)
-- Mencatat seluruh operasi CRUD finansial & administratif.
+- Mencatat seluruh operasi CRUD finansial & administratif (termasuk mutasi siswa dan pembatalan tagihan).
 - Mencatat pelaku (*actor*), IP address, User Agent, waktu kejadian, serta perbandingan nilai sebelum (*old*) dan sesudah (*new*).
 - Bersifat permanen (*immutable*).
 
@@ -209,5 +220,5 @@ Struktur madrasah terdiri atas 3 jenjang kelas MTs dengan pembagian rombel khusu
 
 # 11. Kualitas & Pengujian Otomatis
 
-- Seluruh alur bisnis dilindungi oleh rangkaian uji otomatis (*Automated Test Suite*): **44 Tests, 153 Assertions Passing 100%**.
+- Seluruh alur bisnis dilindungi oleh rangkaian uji otomatis (*Automated Test Suite*): **48 Tests, 175 Assertions Passing 100%**.
 - Standar penulisan kode terstandarisasi dengan **Laravel Pint**.

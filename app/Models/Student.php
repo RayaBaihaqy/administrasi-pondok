@@ -167,6 +167,73 @@ class Student extends Model
      */
     public function getClassRombelAttribute(): string
     {
-        return $this->class_level.'.'.$this->rombel;
+        return $this->rombel ? "{$this->class_level}.{$this->rombel}" : (string) ($this->class_level ?? '-');
+    }
+
+    // ─── Mutation Helpers ─────────────────────────────────────
+
+    /**
+     * Memproses mutasi keluar / pindah siswa.
+     * Mengubah status menjadi withdrawn dan membatalkan tagihan belum lunas.
+     */
+    public function mutateOut(string $reason = '', ?string $date = null): int
+    {
+        $oldStatus = $this->status;
+        $this->status = self::STATUS_WITHDRAWN;
+        $this->save();
+
+        $cancelledCount = 0;
+        $pendingBills = $this->bills()
+            ->whereIn('status', [Bill::STATUS_UNPAID, Bill::STATUS_OVERDUE])
+            ->get();
+
+        $cancellationNote = '[Dibatalkan - Siswa Pindah]'.($reason ? " Alasan: {$reason}" : '');
+
+        foreach ($pendingBills as $bill) {
+            if ($bill->paid_amount == 0) {
+                $bill->status = Bill::STATUS_CANCELLED;
+                $bill->outstanding_amount = 0;
+                $bill->notes = trim(($bill->notes ? $bill->notes.' | ' : '').$cancellationNote);
+                $bill->save();
+                $cancelledCount++;
+            } elseif ($bill->paid_amount > 0) {
+                // Partial payment: tutup sisa tunggakan
+                $bill->outstanding_amount = 0;
+                $bill->notes = trim(($bill->notes ? $bill->notes.' | ' : '').$cancellationNote);
+                $bill->save();
+                $cancelledCount++;
+            }
+        }
+
+        AuditLog::record(
+            action: 'student_mutated_out',
+            auditable: $this,
+            oldValues: ['status' => $oldStatus],
+            newValues: [
+                'status' => self::STATUS_WITHDRAWN,
+                'reason' => $reason,
+                'date' => $date ?? now()->toDateString(),
+                'cancelled_bills_count' => $cancelledCount,
+            ]
+        );
+
+        return $cancelledCount;
+    }
+
+    /**
+     * Mengembalikan status siswa mutasi menjadi aktif kembali.
+     */
+    public function revertMutation(): void
+    {
+        $oldStatus = $this->status;
+        $this->status = self::STATUS_ACTIVE;
+        $this->save();
+
+        AuditLog::record(
+            action: 'student_mutation_reverted',
+            auditable: $this,
+            oldValues: ['status' => $oldStatus],
+            newValues: ['status' => self::STATUS_ACTIVE]
+        );
     }
 }

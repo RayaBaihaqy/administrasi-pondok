@@ -88,8 +88,6 @@ class PaymentType extends Model
         return $this->hasMany(PaymentTypePrice::class);
     }
 
-    // ─── Relationships ───────────────────────────────────────
-
     /**
      * Override jatuh tempo.
      */

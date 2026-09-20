@@ -99,13 +99,17 @@ class User extends Authenticatable implements FilamentUser
         if ($this->signature_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($this->signature_path)) {
             $path = \Illuminate\Support\Facades\Storage::disk('public')->path($this->signature_path);
             if (file_exists($path)) {
-                return 'data:image/png;base64,'.base64_encode(file_get_contents($path));
+                $mime = function_exists('mime_content_type') ? (mime_content_type($path) ?: 'image/png') : 'image/png';
+
+                return 'data:'.$mime.';base64,'.base64_encode(file_get_contents($path));
             }
         }
 
         $defaultPath = public_path('images/signature.png');
         if (file_exists($defaultPath)) {
-            return 'data:image/png;base64,'.base64_encode(file_get_contents($defaultPath));
+            $mime = function_exists('mime_content_type') ? (mime_content_type($defaultPath) ?: 'image/png') : 'image/png';
+
+            return 'data:'.$mime.';base64,'.base64_encode(file_get_contents($defaultPath));
         }
 
         return null;

@@ -255,7 +255,8 @@ class BillingService
         $startPeriodDate = $startBillingPeriod ? Carbon::parse($startBillingPeriod)->startOfMonth() : Carbon::now()->startOfMonth();
         $billingDate = Carbon::now();
 
-        $cleanNis = str_replace([' ', '-'], '', $student->nis);
+        $nisValue = $student->nis ?: ($student->nism ?: 'GEN');
+        $cleanNis = str_replace([' ', '-'], '', (string) $nisValue);
         $baseAmount = intdiv($totalAmount, $tenorCount);
         $remainder = $totalAmount % $tenorCount;
 

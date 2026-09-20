@@ -39,7 +39,7 @@
          │ 1:N                             │ 1:N                             │ 1:N
          ▼                                 ▼                                 ▼
 ┌────────────────────────┐       ┌──────────────────┐       ┌────────────────────────┐
-│student_academic_years  │       │      bills       │       │student_payment_override│
+│student_academic_years  │       │      bills       │       │payment_due_date_overrid│
 └────────────────────────┘       │(unpaid/paid/over)│       └────────────────────────┘
                                  └─────────┬────────┘
                                            │
@@ -127,7 +127,7 @@ Menyimpan data induk santri / siswa madrasah.
 | `class_level` | TINYINT UNSIGNED | Tidak | INDEX | Tingkat Kelas (`7`, `8`, `9`) |
 | `rombel` | VARCHAR(10) | Tidak | INDEX | Rombel dinamis (`7.1`-`7.3`, `8.1`-`8.4`, `9.1`-`9.4`) |
 | `entry_year` | YEAR | Ya | — | Tahun Masuk |
-| `status` | ENUM | Tidak | INDEX | `active`, `graduated`, `transferred`, `inactive` |
+| `status` | ENUM | Tidak | INDEX | `active`, `graduated`, `withdrawn`, `inactive` |
 | `email` | VARCHAR(255) | Ya | — | Email kontak siswa |
 | `phone` | VARCHAR(30) | Ya | — | Nomor telepon kontak siswa |
 | `address` | TEXT | Ya | — | Alamat tempat tinggal |
@@ -199,9 +199,10 @@ Menyimpan tagihan yang diterbitkan kepada siswa.
 | `due_date` | DATE | Tidak | INDEX | Batas akhir pembayaran |
 | `amount` | BIGINT UNSIGNED | Tidak | — | Total nilai tagihan (Rupiah) |
 | `paid_amount` | BIGINT UNSIGNED | Tidak | — | Total yang sudah dibayar |
-| `status` | ENUM | Tidak | INDEX | `unpaid`, `paid`, `overdue` |
+| `status` | ENUM | Tidak | INDEX | `unpaid`, `paid`, `overdue`, `cancelled` |
 | `installment_number` | TINYINT UNSIGNED | Ya | — | Angsuran ke-N (untuk cicilan) |
 | `total_installments` | TINYINT UNSIGNED | Ya | — | Total tenor angsuran |
+| `notes` | TEXT | Ya | — | Catatan khusus / alasan pembatalan / mutasi |
 | `created_at` | TIMESTAMP | Ya | — | Waktu penerbitan |
 | `updated_at` | TIMESTAMP | Ya | — | Waktu pembaruan |
 

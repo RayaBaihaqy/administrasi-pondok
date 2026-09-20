@@ -68,4 +68,20 @@ class TreasurerProfileSignatureTest extends TestCase
             $this->assertNotEmpty($receiptHtml);
         }
     }
+
+    public function test_edit_profile_redirects_to_dashboard_after_save(): void
+    {
+        $superadmin = User::where('role', User::ROLE_SUPER_ADMIN)->first();
+        $this->assertNotNull($superadmin);
+
+        \Livewire\Livewire::actingAs($superadmin)
+            ->test(\App\Filament\Pages\Auth\EditProfile::class)
+            ->fillForm([
+                'name' => 'Hj. Titi Nurhayati, S. Pd',
+                'email' => $superadmin->email,
+            ])
+            ->call('save')
+            ->assertHasNoFormErrors()
+            ->assertRedirect(filament()->getUrl());
+    }
 }

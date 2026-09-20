@@ -41,6 +41,7 @@ Status tagihan dan transaksi wajib menggunakan standarisasi visual berikut:
 | **Belum Bayar (`unpaid`)** | 🟡 Kuning / Amber | `bg-amber-50 text-amber-700 border-amber-200` | Tagihan aktif, belum lunas, dan belum melewati jatuh tempo |
 | **Lunas (`paid`)** | 🟢 Hijau / Emerald | `bg-emerald-50 text-emerald-700 border-emerald-200` | Tagihan telah dibayar penuh (sisa Rp 0) |
 | **Terlambat (`overdue`)** | 🔴 Merah / Rose | `bg-rose-50 text-rose-700 border-rose-200` | Melewati tanggal jatuh tempo dan masih ada tunggakan |
+| **Dibatalkan (`cancelled`)** | ⚪ Abu-abu / Slate | `bg-slate-100 text-slate-700 border-slate-200` | Tagihan dibatalkan (misal akibat mutasi siswa pindah) |
 | **Pending Gateway** | 🔵 Biru / Sky | `bg-sky-50 text-sky-700 border-sky-200` | Menunggu pembayaran Snap Midtrans diselesaikan |
 
 ---
@@ -61,9 +62,14 @@ Status tagihan dan transaksi wajib menggunakan standarisasi visual berikut:
 
 ### 4.1 Struktur Panel Admin (`/admin`)
 - **Header**: Menampilkan nama madrasah, breadcrumb navigasi, indikator tahun ajaran aktif, notifikasi, dan avatar profil staf.
+- **Header Tabs Navigasi Tabel Siswa**:
+  - `🟢 Siswa Aktif` (Default view dengan counter badge)
+  - `🟠 Siswa Mutasi / Pindah` (Arsip santri pindah)
+  - `🔵 Alumni / Lulus` (Arsip kelulusan)
+  - `Semua Siswa` (Basis data keseluruhan)
 - **Sidebar**: Dikelompokkan ke dalam grup fungsional logis:
   - **DASHBOARD**: Ringkasan Statistik & Widget Tagihan Jatuh Tempo.
-  - **DATA MASTER**: Siswa (Rombel Dinamis), Orang Tua / Wali, Tahun Ajaran, Pos Pembayaran (11 Pos Resmi).
+  - **DATA MASTER**: Siswa (Rombel Dinamis & Aksi Mutasi), Orang Tua / Wali, Tahun Ajaran, Pos Pembayaran (11 Pos Resmi).
   - **TRANSAKSI & PENAGIHAN**: Tagihan (Bulk Generator & Cicilan), Pembayaran Loket Kasir, Log WhatsApp.
   - **LAPORAN**: Laporan Pemasukan, Laporan Tunggakan, Laporan Transaksi.
   - **SISTEM & AUDIT**: Audit Trail, Profil & Tanda Tangan Bendahara (`/admin/profile`).
@@ -73,7 +79,7 @@ Status tagihan dan transaksi wajib menggunakan standarisasi visual berikut:
 - **Komponen Form**:
   1. **Nama Lengkap Bendahara**: Text input untuk nama pejabat resmi (contoh: *Hj. Titi Maryati, S.Pd.I*).
   2. **Tanda Tangan Digital**: File upload komponen dengan preview gambar tanda tangan PNG transparan.
-- **Feedback Visual**: Notifikasi toast sukses saat profil disimpan, dengan jaminan langsung terintegrasi ke cetakan PDF.
+- **Feedback Visual & Auto-Redirect**: Notifikasi toast sukses saat profil disimpan, dengan otomatis mengarahkan admin kembali ke **Dashboard Utama** (`/admin`).
 
 ### 4.3 Struktur Portal Wali Santri (`/portal`)
 - **Desain Mobile-First**: Dioptimalkan penuh untuk layar ponsel pintar wali murid (lebar 360px s/d 428px) tanpa horizontal scroll yang mengganggu.

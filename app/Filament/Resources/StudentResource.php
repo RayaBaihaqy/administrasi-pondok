@@ -3,10 +3,12 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\StudentResource\Pages;
+use App\Models\Bill;
 use App\Models\ParentProfile;
 use App\Models\Student;
 use Filament\Actions;
 use Filament\Forms;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -115,6 +117,7 @@ class StudentResource extends Resource
                                 $user = \App\Models\User::create([
                                     'name' => $data['full_name'],
                                     'email' => $data['contact_email'] ?? 'parent_'.time().'@pondok.test',
+                                    'phone' => $data['phone'] ?? null,
                                     'password' => bcrypt('password'),
                                     'role' => 'parent',
                                 ]);
@@ -241,6 +244,65 @@ class StudentResource extends Resource
                     ->options(Student::GENDERS),
             ])
             ->actions([
+                Actions\Action::make('mutate')
+                    ->label('Mutasi / Pindah')
+                    ->icon('heroicon-o-arrow-right-start-on-rectangle')
+                    ->color('warning')
+                    ->visible(fn (Student $record): bool => $record->status === Student::STATUS_ACTIVE)
+                    ->modalHeading(fn (Student $record): string => "Mutasi Siswa Keluar: {$record->full_name}")
+                    ->modalDescription(function (Student $record): string {
+                        $unpaidCount = $record->bills()->whereIn('status', [Bill::STATUS_UNPAID, Bill::STATUS_OVERDUE])->count();
+                        $unpaidTotal = $record->bills()->whereIn('status', [Bill::STATUS_UNPAID, Bill::STATUS_OVERDUE])->sum('outstanding_amount');
+
+                        if ($unpaidCount > 0) {
+                            return "Siswa ini memiliki {$unpaidCount} tagihan belum lunas (Total Rp ".number_format($unpaidTotal, 0, ',', '.').'). Memproses mutasi akan otomatis membatalkan tagihan yang belum dibayar.';
+                        }
+
+                        return 'Siswa tidak memiliki tagihan tertunggak. Status siswa akan diubah menjadi Keluar/Pindah.';
+                    })
+                    ->form([
+                        Forms\Components\DatePicker::make('withdrawal_date')
+                            ->label('Tanggal Efektif Mutasi')
+                            ->default(now())
+                            ->required(),
+                        Forms\Components\Textarea::make('withdrawal_reason')
+                            ->label('Alasan Mutasi / Sekolah Tujuan')
+                            ->placeholder('Contoh: Pindah domisili orang tua / mutasi ke sekolah lain')
+                            ->rows(2),
+                    ])
+                    ->modalSubmitActionLabel('Proses Mutasi Siswa')
+                    ->action(function (Student $record, array $data): void {
+                        $cancelledCount = $record->mutateOut(
+                            reason: $data['withdrawal_reason'] ?? '',
+                            date: $data['withdrawal_date'] ?? null
+                        );
+
+                        Notification::make()
+                            ->title('Mutasi Siswa Berhasil')
+                            ->body("Status {$record->full_name} diubah menjadi Keluar/Pindah. Sebanyak {$cancelledCount} tagihan belum lunas telah dibatalkan.")
+                            ->success()
+                            ->send();
+                    }),
+
+                Actions\Action::make('revert_mutation')
+                    ->label('Aktifkan Kembali')
+                    ->icon('heroicon-o-arrow-path')
+                    ->color('success')
+                    ->visible(fn (Student $record): bool => $record->status === Student::STATUS_WITHDRAWN)
+                    ->requiresConfirmation()
+                    ->modalHeading(fn (Student $record): string => "Aktifkan Kembali Siswa: {$record->full_name}")
+                    ->modalDescription('Apakah Anda yakin ingin mengembalikan status siswa ini menjadi Aktif?')
+                    ->modalSubmitActionLabel('Ya, Aktifkan Siswa')
+                    ->action(function (Student $record): void {
+                        $record->revertMutation();
+
+                        Notification::make()
+                            ->title('Siswa Diaktifkan Kembali')
+                            ->body("Status {$record->full_name} telah dikembalikan menjadi Aktif.")
+                            ->success()
+                            ->send();
+                    }),
+
                 Actions\EditAction::make(),
                 Actions\ViewAction::make(),
             ])

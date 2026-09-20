@@ -34,7 +34,7 @@ Sistem ini dibangun dengan arsitektur **Modular Monolith Enterprise** menggunaka
 | **PDF Document** | DomPDF | `^3.1` | Generasi Invoice, Kuitansi Berstempel & Rekapitulasi PDF |
 | **Spreadsheet Engine**| PhpSpreadsheet | `^5.9` | Generator Template Native `.xlsx` & Universal Spreadsheet Parser |
 | **Database** | MySQL | `>= 8.0` | Relational Database Storage dengan Indexing Optimal |
-| **Testing Suite** | PHPUnit | `^11.5` | Automated Unit & Feature Testing (**44/44 Passing, 153 assertions — 100%**) |
+| **Testing Suite** | PHPUnit | `^11.5` | Automated Unit & Feature Testing (**48/48 Passing, 175 assertions — 100%**) |
 
 ---
 
@@ -64,34 +64,41 @@ Seluruh identitas lembaga dan informasi rekening pembayaran terpusat pada file k
   * 🔴 *"Password salah."* jika kata sandi keliru.
 * **Admin Staff Panel (`/admin`)**:
   * **Super Admin (*Kepala Yayasan / Bendahara Utama*)**: Log Audit, Kenaikan Kelas Massal, Reset Tahun Ajaran, Konfigurasi Tarif, dan Pengaturan Profil/TTD Bendahara.
-  * **Admin (*Operator Keuangan / Kasir*)**: Pengelolaan Siswa, Import Excel `.xlsx`, Penerbitan Tagihan, Kasir Tunai, Laporan Keuangan, dan Pengiriman WhatsApp.
+  * **Admin (*Operator Keuangan / Kasir*)**: Pengelolaan Siswa, Mutasi Siswa Pindah, Import Excel `.xlsx`, Penerbitan Tagihan, Kasir Tunai, Laporan Keuangan, dan Pengiriman WhatsApp.
 * **Parent Portal Panel (`/portal`)**:
   * Dirancang khusus untuk **Wali Santri** dengan tema Emerald Green yang bersih dan responsif.
-  * 3 Menu Utama: **Dashboard** (Tunggakan & Bayar Online), **Anak Saya** (Profil Santri), dan **Riwayat Pembayaran** (Arsip Kuitansi PDF).
+  * 3 Menu Utama: **Dashboard** (Tunggakan & Bayar Online), **Anak Saya** (Profil Santri & Multi-anak Sibling), dan **Riwayat Pembayaran** (Arsip Kuitansi PDF).
 
 ### 2. Pengaturan Profil Bendahara & Upload Tanda Tangan Digital (`/admin/profile`)
 * Halaman **Profile** di pojok kanan atas untuk Super Admin/Bendahara:
   * **Nama Bendahara**: Nama lengkap & gelar resmi bendahara.
-  * **Upload Tanda Tangan (TTD)**: Unggah file foto/scan tanda tangan (PNG/JPG).
+  * **Upload Tanda Tangan (TTD)**: Unggah file foto/scan tanda tangan (PNG/JPG transparan).
+  * **Auto-Redirect**: Setelah data profil dan TTD disimpan, sistem otomatis mengarahkan admin kembali ke **Dashboard Utama**.
 * **Integrasi Dinamis**: Seluruh Kuitansi Pembayaran PDF dan Surat Tagihan/Invoice PDF yang di-generate otomatis langsung memakai nama dan tanda tangan terbaru yang diunggah.
 
-### 3. Pemilihan Rombel Dinamis & Pilihan Bergantung Kelas
-* Pilihan rombel kelas terkunci sampai tingkat kelas dipilih:
-  * **Kelas 7**: Rombel `7.1`, `7.2`, `7.3`
-  * **Kelas 8**: Rombel `8.1`, `8.2`, `8.3`, `8.4`
-  * **Kelas 9**: Rombel `9.1`, `9.2`, `9.3`, `9.4`
-* Form Tambah Siswa baru otomatis mengeset status siswa sebagai **Aktif (`active`)**.
+### 3. Manajemen Mutasi Siswa (Siswa Pindah) & Pembatalan Tagihan Otomatis
+* **Aksi 1-Klik `[ Mutasi / Pindah ]`**: Mengubah status siswa aktif menjadi **Keluar / Pindah (`withdrawn`)** dengan modal konfirmasi interaktif.
+* **Auto-Cancel Tagihan Menggantung**: Tagihan yang berstatus `unpaid` atau `overdue` otomatis dibatalkan (`cancelled`) dengan catatan alasan mutasi, sehingga piutang madrasah langsung bersih.
+* **Integritas Pembukuan Terjaga**: Riwayat tagihan dan kuitansi pembayaran yang sudah lunas (`paid`/`success`) tetap tersimpan utuh untuk kebutuhan rekapitulasi keuangan tahunan akuntan yayasan.
+* **Header Tabs Filter**: Halaman Siswa dilengkapi tab `🟢 Siswa Aktif`, `🟠 Siswa Mutasi / Pindah`, `🔵 Alumni / Lulus`, dan `Semua Siswa` dengan badge jumlah siswa dinamis.
 
-### 4. Transisi Tahun Ajaran Baru & Auto-Generate Nama
+### 4. Pemilihan Rombel Dinamis & Data Real Siswa (239 Siswa Nyata)
+* Pilihan rombel kelas terkunci sampai tingkat kelas dipilih:
+  * **Kelas 7**: Rombel `7.1`, `7.2`, `7.3` (61 Siswa)
+  * **Kelas 8**: Rombel `8.1`, `8.2`, `8.3`, `8.4` (73 Siswa)
+  * **Kelas 9**: Rombel `9.1`, `9.2`, `9.3`, `9.4` (105 Siswa)
+* Terintegrasi dengan **Data Nyata Orang Tua** (nama asli, nomor WhatsApp asli, email asli) serta mendukung pengelompokan saudara kandung (*siblings*) pada satu akun portal wali.
+
+### 5. Transisi Tahun Ajaran Baru & Auto-Generate Nama
 * Modal transisi tahun ajaran hanya membutuhkan **Tanggal Mulai** dan **Tanggal Selesai**.
 * Nama tahun ajaran baru ter-generate otomatis dari tahun kedua tanggal tersebut (misal `2026/2027`).
 * Dilengkapi *repeater* dinamis siswa tinggal kelas dengan pencarian terkelompok per kelas.
 
-### 5. Download Template & Import Data Siswa Massal Native Excel (`.xlsx`)
+### 6. Download Template & Import Data Siswa Massal Native Excel (`.xlsx`)
 * Tombol **`Download Template`**: Menghasilkan file native **Excel Workbook (`.xlsx`)** dengan format kolom **`Number` (desimal 0)** untuk NISM, Tingkat Kelas, Tahun Masuk, serta format **`Text`** untuk NISN & No. HP agar angka `0` tidak hilang.
 * **Sanitasi Data Anti-`e+17`**: Parser import secara otomatis membersihkan notasi ilmiah dan formula Excel, memastikan data masuk utuh dan bersih.
 
-### 6. Otomasi WhatsApp & 1-Klik Kirim Pesan (`wa.me`)
+### 7. Otomasi WhatsApp & 1-Klik Kirim Pesan (`wa.me`)
 * **100% Bebas Biaya Gateway**: Menggunakan URL generator `https://wa.me/` yang langsung membuka aplikasi WhatsApp / WhatsApp Web.
 * Pesan notifikasi melampirkan link unduh dokumen PDF resmi berstempel (`/docs/invoice/{no}` dan `/docs/receipt/{no}`).
 * Normalisasi nomor telepon otomatis (`08xx`, `+628xx` ➡️ `628xx`).
@@ -191,9 +198,9 @@ administrasi-pondok/
 │   └── Services/                                # BillingService, PaymentService, StudentImportService, DocumentService, TransitionService, WhatsAppAutomationService
 ├── database/
 │   ├── migrations/                              # 25 Database Migrations
-│   └── seeders/                                 # DatabaseSeeder, UserSeeder, PaymentTypeSeeder, StudentSeeder, BillSeeder, PaymentSeeder
+│   └── seeders/                                 # DatabaseSeeder, UserSeeder, AcademicYearSeeder, PaymentTypeSeeder, BillSeeder
 ├── resources/views/pdf/                         # Template DomPDF Invoice, Receipt & Laporan
-└── tests/                                       # 44 Automated Unit & Feature Tests
+└── tests/                                       # 48 Automated Unit & Feature Tests
 ```
 
 ---
@@ -226,4 +233,4 @@ Jalankan seluruh test suite dengan perintah:
 ```bash
 php artisan test
 ```
-**Status: 44 tests passed, 153 assertions (100% PASS)**
+**Status: 48 tests passed, 175 assertions (100% PASS)**

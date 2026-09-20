@@ -21,6 +21,7 @@ Super Admin memiliki hak akses tertinggi di sistem dengan wewenang mengelola kon
 
 2. **Manajemen Profil & Tanda Tangan Digital Bendahara (Halaman Profile `/admin/profile`)**
    * Pembaruan Nama Resmi Bendahara dan unggah Tanda Tangan Digital (format PNG/JPG transparan).
+   * **Auto-Redirect ke Dashboard**: Setelah proses penyimpanan profil bendahara berhasil, sistem otomatis mengarahkan admin kembali ke **Dashboard Utama** (`/admin`).
    * Integrasi otomatis tanda tangan digital dan nama bendahara ke seluruh dokumen PDF yang di-generate (Invoice Tagihan dan Kuitansi Pembayaran Sah).
    * Mendukung pergantian pejabat bendahara kapan saja tanpa mengubah kode program.
 
@@ -36,7 +37,7 @@ Super Admin memiliki hak akses tertinggi di sistem dengan wewenang mengelola kon
    * Pencatatan riwayat penempatan kelas siswa di tabel histori akademik (`student_academic_years`).
 
 5. **Akses & Monitoring Audit Trail Sistem (Eksklusif Super Admin)**
-   * Rekam jejak lengkap seluruh aktivitas administratif dan finansial di sistem.
+   * Rekam jejak lengkap seluruh aktivitas administratif dan finansial di sistem (termasuk mutasi siswa dan transisi akademik).
    * Mencatat waktu kejadian, nama pelaku (*actor*), role, tipe entitas data (*auditable type*), ID data, IP address, dan User Agent browser.
    * Perbandingan visual perubahan data sebelum (*old values*) dan sesudah (*new values*).
    * Bersifat *immutable* (tidak dapat diedit/dihapus oleh siapapun) untuk kepatuhan audit transparansi.
@@ -87,79 +88,95 @@ Admin bertugas menangani operasional harian madrasah, mencakup pengelolaan data 
 
 2. **Manajemen Data Siswa / Santri Lengkap & Rombel Dinamis**
    * Pengelolaan data santri: NISN (unik), NISM, Nama Lengkap, Jenis Kelamin, Tanggal Lahir, Tingkat Kelas (7, 8, 9), Rombel Dinamis (Kelas 7: 7.1-7.3, Kelas 8: 8.1-8.4, Kelas 9: 9.1-9.4), Tahun Masuk, Status Default Aktif (`active`), Email, No. HP, dan Alamat.
-   * Relasi langsung dengan akun orang tua/wali siswa.
+   * Relasi langsung dengan akun orang tua/wali siswa (termasuk dukungan otomatis untuk saudara kandung / *siblings*).
 
-3. **Import Data Siswa Massal dari File Excel Asli (.xlsx)**
+3. **Manajemen Mutasi Siswa (Pindah / Keluar) & Pembatalan Tagihan Otomatis**
+   * **Tombol Aksi Cepat `[ Mutasi / Pindah ]`**: Mengubah status siswa aktif menjadi Keluar / Pindah (`withdrawn`).
+   * **Dialog Konfirmasi Cerdas**: Menampilkan jumlah dan total nominal tagihan belum lunas yang akan dibatalkan, serta input tanggal mutasi dan alasan / sekolah tujuan.
+   * **Auto-Cancel Tagihan Belum Lunas**: Semua tagihan berstatus `unpaid` atau `overdue` otomatis diubah statusnya menjadi `cancelled` (`outstanding_amount = 0`) dengan catatan alasan mutasi.
+   * **Integritas Pembukuan Terjaga**: Seluruh tagihan dan pembayaran yang sudah lunas (`paid`/`success`) tetap dikunci dan tidak terhapus untuk kebutuhan audit dan laporan tahunan akuntan.
+   * **Aksi `[ Aktifkan Kembali ]`**: Mengembalikan status siswa menjadi aktif jika terjadi kekeliruan mutasi.
+
+4. **Header Tabs Filter Status Siswa**
+   * Tab filter di atas tabel siswa:
+     - `🟢 Siswa Aktif` *(Default)*: Hanya menampilkan siswa aktif.
+     - `🟠 Siswa Mutasi / Pindah`: Menampilkan arsip siswa keluar/pindah.
+     - `🔵 Alumni / Lulus`: Menampilkan siswa yang telah lulus.
+     - `Semua Siswa`: Menampilkan seluruh database siswa.
+   * Dilengkapi badge penghitung (*counter badge*) jumlah siswa secara dinamis.
+
+5. **Import Data Siswa Massal dari File Excel Asli (.xlsx)**
    * Upload file data siswa massal via spreadsheet Excel native (`.xlsx`) menggunakan template resmi `template_import_siswa_mts_miftahul_ulum.xlsx`.
    * Format kolom presisi: Nomor (0 Desimal) untuk NISM, Tingkat Kelas, dan Tahun Masuk; Teks untuk NISN dan No. Telepon; Bebas notasi ilmiah `e+17`.
    * Validasi otomatis duplikasi NISN, format rombel sesuai tingkat, dan pembuatan otomatis akun login orang tua/wali (*auto-provisioning parent account*).
    * Tombol unduh Template Excel resmi langsung dari panel admin.
 
-4. **Manajemen Data & Profil Orang Tua / Wali Siswa**
+6. **Manajemen Data & Profil Orang Tua / Wali Siswa**
    * Pengelolaan profil wali santri: Nama Lengkap, No. Telepon / WhatsApp, Email Kontak Utama, dan Alamat Lengkap.
    * Pengelolaan akun login wali murid untuk akses Portal Wali (`/portal`) via Email atau No. Telepon.
+   * Penanganan satu akun wali untuk beberapa anak kandung (*multi-children parent account*).
 
-5. **Penerbitan Tagihan Massal Cerdas (Bulk Bill Generator)**
+7. **Penerbitan Tagihan Massal Cerdas (Bulk Bill Generator)**
    * Pembuatan tagihan sekaligus dengan 3 opsi target:
      - Seluruh Siswa Aktif.
      - Per Angkatan / Tingkat Kelas (misal: Khusus Kelas 7 saja).
      - Per Rombel Spesifik (misal: Khusus Kelas 7.1 saja).
    * Proteksi *Idempotency*: Mencegah pembuatan tagihan duplikat jika tagihan untuk periode dan siswa tersebut sudah pernah dibuat.
 
-6. **Penerbitan Tagihan Satuan / Individual**
+8. **Penerbitan Tagihan Satuan / Individual**
    * Form pembuatan tagihan per siswa dengan fitur *auto-fill* nominal tarif resmi berdasarkan kelas dan jenis pembayaran yang dipilih.
 
-7. **Penerbitan Tagihan dengan Skema Cicilan (Sistem A)**
+9. **Penerbitan Tagihan dengan Skema Cicilan (Sistem A)**
    * Fitur pemecahan tagihan bernilai besar menjadi beberapa kali cicilan bulanan (pilihan tenor 2 s/d 36 bulan).
    * Kalkulasi otomatis pembagian nominal angsuran dengan penanganan pembulatan presisi (*rounding adjustment* pada tenor terakhir).
    * Otomatis menetapkan tanggal jatuh tempo bertahap per bulan secara berurutan.
    * Dilengkapi *live preview* estimasi nominal tagihan per bulan.
 
-8. **Loket Kasir Pembayaran Tunai & Bank Manual (Offline Cashier)**
-   * Tombol aksi cepat **"Bayar Manual / Kasir"** langsung dari baris tabel tagihan.
-   * Mendukung pelunasan langsung maupun pembayaran sebagian / cicilan.
-   * Proteksi *anti-overpayment* (sistem menolak nominal pembayaran yang melebihi sisa tunggakan).
-   * Kalkulasi otomatis sisa tagihan (*outstanding amount*) dan pembaruan status tagihan menjadi Lunas (`paid`).
+10. **Loket Kasir Pembayaran Tunai & Bank Manual (Offline Cashier)**
+    * Tombol aksi cepat **"Bayar Manual / Kasir"** langsung dari baris tabel tagihan.
+    * Mendukung pelunasan langsung maupun pembayaran sebagian / cicilan.
+    * Proteksi *anti-overpayment* (sistem menolak nominal pembayaran yang melebihi sisa tunggakan).
+    * Kalkulasi otomatis sisa tagihan (*outstanding amount*) dan pembaruan status tagihan menjadi Lunas (`paid`).
 
-9. **Upload & Pengarsipan Bukti Pembayaran (Payment Evidence)**
-   * Fitur unggah berkas bukti transfer fisik / resi ATM / slip setoran bank yang diserahkan wali saat membayar di loket.
+11. **Upload & Pengarsipan Bukti Pembayaran (Payment Evidence)**
+    * Fitur unggah berkas bukti transfer fisik / resi ATM / slip setoran bank yang diserahkan wali saat membayar di loket.
 
-10. **Penerbitan Kuitansi PDF Sah Berstempel Digital & Tanda Tangan Bendahara**
+12. **Penerbitan Kuitansi PDF Sah Berstempel Digital & Tanda Tangan Bendahara**
     * Pembuatan kuitansi resmi otomatis setiap kali transaksi berhasil tercatat.
     * Nomor kuitansi unik (`PAY-MAN-{NIS}-{YYYYMMDD}-{RAND}`).
     * Memuat cap stempel bulat digital madrasah, nama & tanda tangan dinamis bendahara, rincian pembayaran, dan kalimat terbilang nominal rupiah.
     * Tersedia aksi cetak langsung (*stream*) dan unduh berkas PDF (*download*).
 
-11. **Penerbitan Invoice Tagihan PDF Resmi Berkop Surat**
+13. **Penerbitan Invoice Tagihan PDF Resmi Berkop Surat**
     * Dokumen penagihan resmi dengan format nomor standar (`INV-{NIS}-{YYYYMM}-{RAND}`).
     * Berisi rincian biaya, identitas santri, instruksi transfer rekening resmi BRI, watermark status tagihan, serta nama & tanda tangan bendahara.
 
-12. **Pengiriman Notifikasi WhatsApp 1-Klik (`wa.me`) Bebas Biaya Langganan**
+14. **Pengiriman Notifikasi WhatsApp 1-Klik (`wa.me`) Bebas Biaya Langganan**
     * Tombol aksi **"Kirim WA"** di baris tagihan dan pembayaran yang langsung membuka WhatsApp Web / Aplikasi WhatsApp.
     * Otomatis memuat pesan berstandar resmi institusi dengan salam islami, rincian biaya, batas waktu, dan tautan unduh dokumen PDF resmi.
     * Normalisasi otomatis nomor handphone lokal (`08xx`, `+628xx`, `628xx`).
 
-13. **Monitoring Riwayat Log WhatsApp (WhatsApp Logs)**
+15. **Monitoring Riwayat Log WhatsApp (WhatsApp Logs)**
     * Tabel riwayat seluruh notifikasi WhatsApp yang disiapkan dan dikirimkan sistem.
     * Mencatat nama penerima, nomor telepon, jenis pesan (Tagihan Baru, Pengingat H-2, Pembayaran Sukses), nominal, waktu kirim, dan isi pesan lengkap.
 
-14. **Laporan Riwayat Pembayaran (Payment Report)**
+16. **Laporan Riwayat Pembayaran (Payment Report)**
     * Audit tabel seluruh transaksi pembayaran sukses.
     * Filter berdasarkan metode pembayaran (Midtrans vs Kasir Tunai), rentang tanggal transaksi, dan pencarian siswa.
 
-15. **Laporan Pemasukan (Revenue Report)**
+17. **Laporan Pemasukan (Revenue Report)**
     * Rekapitulasi total dana yang masuk per pos anggaran.
     * Breakdown persentase pemasukan dari pembayaran online Midtrans vs kasir manual.
     * Filter periode cepat (*Bulan Ini, Bulan Kemarin, 3 Bulan, 6 Bulan, Tahun Ini, Custom Tanggal*).
     * Tombol ekspor dokumen: **Download PDF Rekap** dan **Download CSV/Excel Clean**.
 
-16. **Laporan Tunggakan Tagihan (Outstanding Report)**
+18. **Laporan Tunggakan Tagihan (Outstanding Report)**
     * Monitoring seluruh siswa yang belum menyelesaikan kewajiban administrasi.
     * Pemilahan status tagihan: Belum Lunas (belum jatuh tempo) vs Terlambat / Overdue (melewati tanggal tempo).
     * Filter rentang tanggal jatuh tempo dengan indikator badge aktif.
     * Tombol ekspor dokumen: **Download PDF Rekapitulasi Tunggakan** dan **Download CSV/Excel**.
 
-17. **Eksekusi Perintah Otomasi (Scheduled Artisan Commands)**
+19. **Eksekusi Perintah Otomasi (Scheduled Artisan Commands)**
     * `php artisan spp:generate`: Menjalankan generate tagihan bulanan secara terjadwal.
     * `php artisan bills:detect-overdue`: Mendeteksi dan memperbarui status tagihan menjadi *overdue*.
     * `php artisan bills:send-reminders`: Menyiapkan log pengingat WhatsApp H-2 jatuh tempo secara otomatis.

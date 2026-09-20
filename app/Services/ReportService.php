@@ -100,8 +100,26 @@ class ReportService
             ->get()
             ->toArray();
 
-        // Revenue per metode
-        $byMethod = (clone $query)
+        // Revenue per metode (standalone query to avoid relation overhead)
+        $byMethodQuery = DB::table('payments')
+            ->join('bills', 'payments.bill_id', '=', 'bills.id')
+            ->where('payments.status', Payment::STATUS_SUCCESS)
+            ->whereNull('payments.deleted_at');
+
+        if (! empty($filters['academic_year_id'])) {
+            $byMethodQuery->where('bills.academic_year_id', $filters['academic_year_id']);
+        }
+        if (! empty($filters['payment_type_id'])) {
+            $byMethodQuery->where('bills.payment_type_id', $filters['payment_type_id']);
+        }
+        if (! empty($filters['date_from'])) {
+            $byMethodQuery->whereDate('payments.paid_at', '>=', $filters['date_from']);
+        }
+        if (! empty($filters['date_to'])) {
+            $byMethodQuery->whereDate('payments.paid_at', '<=', $filters['date_to']);
+        }
+
+        $byMethod = $byMethodQuery
             ->select('payments.method', DB::raw('SUM(payments.amount) as total'), DB::raw('COUNT(payments.id) as count'))
             ->groupBy('payments.method')
             ->get()

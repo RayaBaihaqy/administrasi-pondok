@@ -39,8 +39,7 @@ class ParentOverviewWidget extends BaseWidget
                 ->descriptionIcon('heroicon-m-academic-cap')
                 ->color('info'),
 
-            Stat::make('Rekening Resmi MTs', (string) config('school.bank_name', 'Bank BRI'))
-                ->value((string) config('school.bank_account', '-'))
+            Stat::make('Rekening Resmi ('.config('school.bank_name', 'Bank BRI').')', (string) config('school.bank_account', '-'))
                 ->description('A/N '.(string) config('school.bank_holder', 'Madrasah Tsanawiyah Miftahul Ulum'))
                 ->descriptionIcon('heroicon-m-building-library')
                 ->color('primary'),

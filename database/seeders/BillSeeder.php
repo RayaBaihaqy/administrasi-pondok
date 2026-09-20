@@ -58,7 +58,8 @@ class BillSeeder extends Seeder
             $sppAmount = 75000;
 
             foreach ($students as $student) {
-                $cleanNis = str_replace([' ', '-'], '', $student->nis);
+                $nisVal = $student->nis ?: ($student->nism ?: $student->id);
+                $cleanNis = str_replace([' ', '-'], '', (string) $nisVal);
                 $billNumber = 'INV-'.$cleanNis.'-2026'.$monthStr.'-'.str_pad($billCounter, 4, '0', STR_PAD_LEFT);
 
                 $isPaid = false;
@@ -147,7 +148,8 @@ class BillSeeder extends Seeder
         if ($pendaftaranBaruType) {
             $class7Students = Student::where('class_level', 7)->get();
             foreach ($class7Students as $c7Student) {
-                $cleanNis = str_replace([' ', '-'], '', $c7Student->nis);
+                $nisVal = $c7Student->nis ?: ($c7Student->nism ?: $c7Student->id);
+                $cleanNis = str_replace([' ', '-'], '', (string) $nisVal);
                 $totalEntry = 1190000;
 
                 $bill = Bill::create([
@@ -214,7 +216,8 @@ class BillSeeder extends Seeder
         if ($daftarUlangGanjilType) {
             $class89Students = Student::whereIn('class_level', [8, 9])->take(40)->get();
             foreach ($class89Students as $s) {
-                $cleanNis = str_replace([' ', '-'], '', $s->nis);
+                $nisVal = $s->nis ?: ($s->nism ?: $s->id);
+                $cleanNis = str_replace([' ', '-'], '', (string) $nisVal);
                 $duAmount = 440000;
 
                 $bill = Bill::create([
@@ -263,7 +266,8 @@ class BillSeeder extends Seeder
         if ($ldksType) {
             $class7Ldks = Student::where('class_level', 7)->take(30)->get();
             foreach ($class7Ldks as $c7Ldks) {
-                $cleanNis = str_replace([' ', '-'], '', $c7Ldks->nis);
+                $nisVal = $c7Ldks->nis ?: ($c7Ldks->nism ?: $c7Ldks->id);
+                $cleanNis = str_replace([' ', '-'], '', (string) $nisVal);
                 $ldksAmount = 450000;
                 $isPaid = rand(1, 100) <= 80;
 
@@ -315,7 +319,8 @@ class BillSeeder extends Seeder
         if ($studyTourType) {
             $class8Tour = Student::where('class_level', 8)->take(30)->get();
             foreach ($class8Tour as $c8Tour) {
-                $cleanNis = str_replace([' ', '-'], '', $c8Tour->nis);
+                $nisVal = $c8Tour->nis ?: ($c8Tour->nism ?: $c8Tour->id);
+                $cleanNis = str_replace([' ', '-'], '', (string) $nisVal);
                 $stAmount = 450000;
                 $isPaid = rand(1, 100) <= 70;
 
@@ -367,7 +372,8 @@ class BillSeeder extends Seeder
         if ($akhirTahunType) {
             $class9Students = Student::where('class_level', 9)->take(15)->get();
             foreach ($class9Students as $c9Student) {
-                $cleanNis = str_replace([' ', '-'], '', $c9Student->nis);
+                $nisVal = $c9Student->nis ?: ($c9Student->nism ?: $c9Student->id);
+                $cleanNis = str_replace([' ', '-'], '', (string) $nisVal);
                 $totalAt = 2000000;
                 $installmentAmount = 200000;
 
@@ -420,7 +426,8 @@ class BillSeeder extends Seeder
         if ($astsPtsGanjilType) {
             $sampleAsts = Student::take(25)->get();
             foreach ($sampleAsts as $s) {
-                $cleanNis = str_replace([' ', '-'], '', $s->nis);
+                $nisVal = $s->nis ?: ($s->nism ?: $s->id);
+                $cleanNis = str_replace([' ', '-'], '', (string) $nisVal);
                 $astsAmount = 75000;
 
                 $bill = Bill::create([
