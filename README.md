@@ -218,10 +218,13 @@ composer install
 cp .env.example .env
 php artisan key:generate
 
-# 4. Jalankan migrasi dan seeder data resmi klien
+# 4. Link storage untuk tanda tangan & kuitansi
+php artisan storage:link
+
+# 5. Jalankan migrasi dan seeder data resmi klien
 php artisan migrate:fresh --seed
 
-# 5. Jalankan server lokal
+# 6. Jalankan server lokal
 php artisan serve
 ```
 
