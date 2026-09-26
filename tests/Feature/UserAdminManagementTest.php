@@ -128,4 +128,35 @@ class UserAdminManagementTest extends TestCase
         $this->admin->refresh();
         $this->assertTrue(\Illuminate\Support\Facades\Hash::check('newSecret123', $this->admin->password));
     }
+
+    public function test_system_strictly_rejects_creating_second_super_admin_at_model_level(): void
+    {
+        $this->expectException(\DomainException::class);
+        $this->expectExceptionMessage('Hanya boleh ada 1 akun Super Admin');
+
+        User::create([
+            'name' => 'Super Admin Kedua Ilegal',
+            'email' => 'superadmin2_'.time().'@pondok.test',
+            'password' => bcrypt('password123'),
+            'role' => User::ROLE_SUPER_ADMIN,
+        ]);
+    }
+
+    public function test_system_strictly_rejects_promoting_user_to_super_admin(): void
+    {
+        $this->expectException(\DomainException::class);
+        $this->expectExceptionMessage('Hanya boleh ada 1 akun Super Admin');
+
+        $this->admin->update([
+            'role' => User::ROLE_SUPER_ADMIN,
+        ]);
+    }
+
+    public function test_system_strictly_rejects_deleting_primary_super_admin(): void
+    {
+        $this->expectException(\DomainException::class);
+        $this->expectExceptionMessage('Akun Super Admin utama tidak boleh dihapus');
+
+        $this->superAdmin->delete();
+    }
 }

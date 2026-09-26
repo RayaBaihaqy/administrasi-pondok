@@ -57,6 +57,34 @@ class User extends Authenticatable implements FilamentUser
         ];
     }
 
+    protected static function booted(): void
+    {
+        static::creating(function (User $user) {
+            if ($user->role === self::ROLE_SUPER_ADMIN) {
+                if (static::where('role', self::ROLE_SUPER_ADMIN)->exists()) {
+                    throw new \DomainException('Hanya boleh ada 1 akun Super Admin di dalam sistem. Tidak dapat membuat akun Super Admin tambahan.');
+                }
+            }
+        });
+
+        static::updating(function (User $user) {
+            if ($user->isDirty('role') && $user->role === self::ROLE_SUPER_ADMIN) {
+                $otherSuperAdminExists = static::where('role', self::ROLE_SUPER_ADMIN)
+                    ->where('id', '!=', $user->id)
+                    ->exists();
+                if ($otherSuperAdminExists) {
+                    throw new \DomainException('Hanya boleh ada 1 akun Super Admin di dalam sistem.');
+                }
+            }
+        });
+
+        static::deleting(function (User $user) {
+            if ($user->role === self::ROLE_SUPER_ADMIN) {
+                throw new \DomainException('Akun Super Admin utama tidak boleh dihapus dari sistem.');
+            }
+        });
+    }
+
     // ─── Role Helpers ────────────────────────────────────────
 
     public function isSuperAdmin(): bool
