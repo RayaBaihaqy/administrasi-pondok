@@ -44,6 +44,14 @@ class RoleNavigationAccessTest extends TestCase
 
         Livewire::test(PaymentTypeResource\Pages\ListPaymentTypes::class)
             ->assertSuccessful();
+
+        // Audit Log is hidden from sidebar navigation, but accessible via direct URL for Super Admin
+        $this->assertFalse(AuditLogResource::shouldRegisterNavigation());
+        Livewire::test(AuditLogResource\Pages\ListAuditLogs::class)
+            ->assertSuccessful();
+
+        $response = $this->get('/admin/audit-log');
+        $response->assertRedirect('/admin/audit-logs');
     }
 
     public function test_admin_cannot_access_academic_year_and_payment_type_resources(): void
@@ -60,6 +68,9 @@ class RoleNavigationAccessTest extends TestCase
             ->assertForbidden();
 
         Livewire::test(PaymentTypeResource\Pages\ListPaymentTypes::class)
+            ->assertForbidden();
+
+        Livewire::test(AuditLogResource\Pages\ListAuditLogs::class)
             ->assertForbidden();
     }
 

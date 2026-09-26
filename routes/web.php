@@ -26,4 +26,8 @@ Route::get('/parent', function () {
 Route::get('/docs/invoice/{billNumber}', [\App\Http\Controllers\DocumentController::class, 'downloadInvoice'])->name('public.invoice');
 Route::get('/docs/receipt/{paymentNumber}', [\App\Http\Controllers\DocumentController::class, 'downloadReceipt'])->name('public.receipt');
 
+Route::get('/admin/audit-log', function () {
+    return redirect('/admin/audit-logs');
+});
+
 Route::post('/payment/callback', [PaymentController::class, 'handleCallback'])->name('payment.callback');
