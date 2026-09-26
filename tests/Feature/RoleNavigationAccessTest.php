@@ -8,6 +8,7 @@ use App\Filament\Resources\BillResource;
 use App\Filament\Resources\PaymentResource;
 use App\Filament\Resources\PaymentTypeResource;
 use App\Filament\Resources\StudentResource;
+use App\Filament\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Livewire\Livewire;
@@ -38,11 +39,15 @@ class RoleNavigationAccessTest extends TestCase
         $this->assertTrue(AcademicYearResource::canViewAny());
         $this->assertTrue(PaymentTypeResource::canViewAny());
         $this->assertTrue(AuditLogResource::canViewAny());
+        $this->assertTrue(UserResource::canViewAny());
 
         Livewire::test(AcademicYearResource\Pages\ListAcademicYears::class)
             ->assertSuccessful();
 
         Livewire::test(PaymentTypeResource\Pages\ListPaymentTypes::class)
+            ->assertSuccessful();
+
+        Livewire::test(UserResource\Pages\ListUsers::class)
             ->assertSuccessful();
 
         // Audit Log is hidden from sidebar navigation, but accessible via direct URL for Super Admin
@@ -62,6 +67,7 @@ class RoleNavigationAccessTest extends TestCase
         $this->assertFalse(AcademicYearResource::canViewAny());
         $this->assertFalse(PaymentTypeResource::canViewAny());
         $this->assertFalse(AuditLogResource::canViewAny());
+        $this->assertFalse(UserResource::canViewAny());
 
         // Direct page access must be forbidden (403)
         Livewire::test(AcademicYearResource\Pages\ListAcademicYears::class)
@@ -71,6 +77,9 @@ class RoleNavigationAccessTest extends TestCase
             ->assertForbidden();
 
         Livewire::test(AuditLogResource\Pages\ListAuditLogs::class)
+            ->assertForbidden();
+
+        Livewire::test(UserResource\Pages\ListUsers::class)
             ->assertForbidden();
     }
 

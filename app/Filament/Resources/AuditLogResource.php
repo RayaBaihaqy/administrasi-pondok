@@ -132,6 +132,9 @@ class AuditLogResource extends Resource
                         'academic_year_transition' => 'Kenaikan Kelas',
                         'create_payment_type' => 'Tambah Jns Bayar',
                         'update_payment_type' => 'Update Jns Bayar',
+                        'create_admin' => 'Tambah Admin',
+                        'update_admin' => 'Update Admin',
+                        'delete_admin' => 'Hapus Admin',
                         default => $state ? ucwords(str_replace('_', ' ', $state)) : '-',
                     })
                     ->color(fn (?string $state): string => match (true) {
@@ -171,6 +174,9 @@ class AuditLogResource extends Resource
                 Tables\Filters\SelectFilter::make('action')
                     ->label('Aktivitas')
                     ->options([
+                        'create_admin' => 'Tambah Admin Baru',
+                        'update_admin' => 'Update Akun Admin',
+                        'delete_admin' => 'Hapus Akun Admin',
                         'create_student' => 'Tambah Siswa',
                         'update_student' => 'Update Siswa',
                         'delete_student' => 'Hapus Siswa',
