@@ -126,9 +126,29 @@ class AcademicYearResource extends Resource
     }
 
     /**
-     * Hanya Super Admin yang bisa membuat/mengedit tahun ajaran.
+     * HANYA Super Admin yang boleh melihat di sidebar, mengakses, dan mengelola master Tahun Ajaran.
      */
+    public static function canViewAny(): bool
+    {
+        return Auth::user()?->isSuperAdmin() ?? false;
+    }
+
     public static function canCreate(): bool
+    {
+        return Auth::user()?->isSuperAdmin() ?? false;
+    }
+
+    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return Auth::user()?->isSuperAdmin() ?? false;
+    }
+
+    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return Auth::user()?->isSuperAdmin() ?? false;
+    }
+
+    public static function canDeleteAny(): bool
     {
         return Auth::user()?->isSuperAdmin() ?? false;
     }

@@ -32,6 +32,13 @@ class AcademicYearTransitionService
             $name = ($startYear === $endYear) ? "{$startYear}/".($startYear + 1) : "{$startYear}/{$endYear}";
         }
 
+        // Validasi duplikasi nama tahun ajaran dengan pesan yang jelas & solutif
+        $existingYear = AcademicYear::where('name', $name)->first();
+        if ($existingYear) {
+            $suggestedNext = (Carbon::parse($startDate)->year + 1).'/'.(Carbon::parse($startDate)->year + 2);
+            throw new \DomainException("Tahun ajaran [{$name}] sudah terdaftar di sistem. Silakan pilih periode atau masukkan nama tahun ajaran berikutnya (contoh: {$suggestedNext}).");
+        }
+
         return DB::transaction(function () use ($name, $startDate, $endDate, $retainedStudentIds) {
             $previousActiveYear = AcademicYear::current();
 
@@ -70,7 +77,7 @@ class AcademicYearTransitionService
                         ],
                         [
                             'class_level' => $student->class_level,
-                            'rombel' => $student->rombel,
+                            'rombel' => $student->rombel ?? '1',
                         ]
                     );
                 }
@@ -96,12 +103,16 @@ class AcademicYearTransitionService
 
                 // Catat penempatan di tahun ajaran baru untuk siswa yang masih aktif
                 if ($student->status === Student::STATUS_ACTIVE) {
-                    StudentAcademicYear::create([
-                        'student_id' => $student->id,
-                        'academic_year_id' => $newYear->id,
-                        'class_level' => $student->class_level,
-                        'rombel' => $student->rombel,
-                    ]);
+                    StudentAcademicYear::updateOrCreate(
+                        [
+                            'student_id' => $student->id,
+                            'academic_year_id' => $newYear->id,
+                        ],
+                        [
+                            'class_level' => $student->class_level,
+                            'rombel' => $student->rombel ?? '1',
+                        ]
+                    );
                 }
             }
 

@@ -348,36 +348,41 @@ class DocumentService
     /**
      * Download Rekapitulasi Tunggakan dalam format PDF.
      */
-    public function downloadOutstandingReportPdf(string $period = 'this_month')
+    public function downloadOutstandingReportPdf(?string $fromDate = null, ?string $untilDate = null)
     {
-        $periodLabels = [
-            'this_month' => 'Bulan Ini ('.now()->translatedFormat('F Y').')',
-            'last_month' => 'Bulan Kemarin ('.now()->subMonth()->translatedFormat('F Y').')',
-            '3_months' => '3 Bulan Terakhir',
-            '6_months' => '6 Bulan Terakhir',
-            'this_year' => 'Tahun Ini ('.now()->year.')',
-        ];
-
-        $periodLabel = $periodLabels[$period] ?? $periodLabels['this_month'];
+        if ($fromDate || $untilDate) {
+            if ($fromDate && $untilDate) {
+                $periodLabel = 'Jatuh Tempo: '.\Carbon\Carbon::parse($fromDate)->format('d/m/Y').' - '.\Carbon\Carbon::parse($untilDate)->format('d/m/Y');
+            } elseif ($untilDate) {
+                $periodLabel = 'Jatuh Tempo s/d '.\Carbon\Carbon::parse($untilDate)->format('d/m/Y');
+            } else {
+                $periodLabel = 'Jatuh Tempo Mulai '.\Carbon\Carbon::parse($fromDate)->format('d/m/Y');
+            }
+        } else {
+            $periodLabel = 'Semua Tunggakan Aktif';
+        }
 
         $billsQuery = Bill::query()
             ->whereIn('status', [Bill::STATUS_UNPAID, Bill::STATUS_OVERDUE])
             ->whereNull('deleted_at');
-        $this->applyRevenueFilter($billsQuery, 'period', $period, null, null, 'due_date');
+
+        if ($fromDate) {
+            $billsQuery->whereDate('due_date', '>=', $fromDate);
+        }
+        if ($untilDate) {
+            $billsQuery->whereDate('due_date', '<=', $untilDate);
+        }
 
         $unpaidBills = (clone $billsQuery)->with(['student', 'paymentType'])->get();
         $totalOutstanding = (clone $billsQuery)->sum('outstanding_amount');
 
-        $overdueBillsQuery = Bill::query()
-            ->where(function ($query) {
-                $query->where('status', Bill::STATUS_OVERDUE)
-                    ->orWhere(function ($q) {
-                        $q->where('status', Bill::STATUS_UNPAID)
-                            ->where('due_date', '<', now()->startOfDay());
-                    });
-            })
-            ->whereNull('deleted_at');
-        $this->applyRevenueFilter($overdueBillsQuery, 'period', $period, null, null, 'due_date');
+        $overdueBillsQuery = (clone $billsQuery)->where(function ($query) {
+            $query->where('status', Bill::STATUS_OVERDUE)
+                ->orWhere(function ($q) {
+                    $q->where('status', Bill::STATUS_UNPAID)
+                        ->where('due_date', '<', now()->startOfDay());
+                });
+        });
 
         $overdueBills = (clone $overdueBillsQuery)->with(['student', 'paymentType'])->get();
         $overdueOutstanding = (clone $overdueBillsQuery)->sum('outstanding_amount');
@@ -392,19 +397,25 @@ class DocumentService
 
         return response()->streamDownload(
             fn () => print ($pdf->output()),
-            'Rekapitulasi_Tunggakan_'.Str::slug($period).'_'.now()->format('Ymd').'.pdf'
+            'Rekapitulasi_Tunggakan_'.now()->format('Ymd_His').'.pdf'
         );
     }
 
     /**
      * Download Rekapitulasi Tunggakan dalam format Clean CSV (Kompatibel 100% dengan Power Query & Excel).
      */
-    public function downloadOutstandingReportExcel(string $period = 'this_month')
+    public function downloadOutstandingReportExcel(?string $fromDate = null, ?string $untilDate = null)
     {
         $billsQuery = Bill::query()
             ->whereIn('status', [Bill::STATUS_UNPAID, Bill::STATUS_OVERDUE])
             ->whereNull('deleted_at');
-        $this->applyRevenueFilter($billsQuery, 'period', $period, null, null, 'due_date');
+
+        if ($fromDate) {
+            $billsQuery->whereDate('due_date', '>=', $fromDate);
+        }
+        if ($untilDate) {
+            $billsQuery->whereDate('due_date', '<=', $untilDate);
+        }
 
         $unpaidBills = $billsQuery->with(['student', 'paymentType'])->get();
 

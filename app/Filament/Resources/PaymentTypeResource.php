@@ -162,8 +162,13 @@ class PaymentTypeResource extends Resource
     }
 
     /**
-     * Hanya Super Admin yang boleh membuat, mengedit, atau menghapus master jenis pembayaran.
+     * HANYA Super Admin yang boleh melihat di sidebar, mengakses, dan mengelola master Jenis Pembayaran.
      */
+    public static function canViewAny(): bool
+    {
+        return Auth::user()?->isSuperAdmin() ?? false;
+    }
+
     public static function canCreate(): bool
     {
         return Auth::user()?->isSuperAdmin() ?? false;

@@ -4,6 +4,7 @@ namespace App\Filament\Pages;
 
 use App\Filament\Widgets\OutstandingBillsWidget;
 use App\Filament\Widgets\OutstandingStatsWidget;
+use App\Services\DocumentService;
 use Filament\Actions;
 use Filament\Forms;
 use Filament\Pages\Page;
@@ -42,6 +43,30 @@ class OutstandingReport extends Page
         $activeFilterCount = ($this->from_date ? 1 : 0) + ($this->until_date ? 1 : 0);
 
         return [
+            Actions\Action::make('generateReport')
+                ->label('Generate Rekapitulasi Tunggakan')
+                ->icon('heroicon-o-document-arrow-down')
+                ->color('success')
+                ->modalSubmitActionLabel('Generate')
+                ->form([
+                    Forms\Components\Select::make('format')
+                        ->label('Pilih Format Dokumen')
+                        ->options([
+                            'pdf' => 'PDF Document (.pdf)',
+                            'excel' => 'Excel Spreadsheet (.csv)',
+                        ])
+                        ->default('pdf')
+                        ->required(),
+                ])
+                ->action(function (array $data) {
+                    $documentService = new DocumentService;
+                    if ($data['format'] === 'pdf') {
+                        return $documentService->downloadOutstandingReportPdf($this->from_date, $this->until_date);
+                    } else {
+                        return $documentService->downloadOutstandingReportExcel($this->from_date, $this->until_date);
+                    }
+                }),
+
             Actions\Action::make('filterDate')
                 ->iconButton()
                 ->icon('heroicon-o-funnel')

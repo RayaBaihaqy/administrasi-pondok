@@ -14,7 +14,7 @@
 | Sistem Database | MySQL 8.0+ / MariaDB 10.4+ |
 | ORM | Laravel Eloquent |
 | Karakter Set / Collation | `utf8mb4_unicode_ci` |
-| Total Migrasi | 25 Migrasi Database Aktif |
+| Total Migrasi | 26 Migrasi Database Aktif |
 | Konvensi Format Uang | Unsigned Big Integer (Rupiah murni tanpa floating point) |
 | Integritas Transaksional | Foreign Key Constraints + Database Transactions (`DB::transaction`) |
 

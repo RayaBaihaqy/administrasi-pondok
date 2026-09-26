@@ -17,7 +17,7 @@ Aplikasi melayani dua kelompok audiens dengan karakteristik antarmuka berbeda na
    - Tampilan profesional bernuansa korporat modern dengan aksen *Emerald Green*.
 
 2. **Portal Mandiri Wali Santri (`/portal`)**:
-   - Berbasis **Laravel Blade + Tailwind CSS**.
+   - Berbasis **Filament 5 Multi-Panel (Livewire SPA + Tailwind CSS)**.
    - Fokus: *Mobile-First*, kemudahan navigasi bagi orang tua santri dari ponsel pintar (*Simplicity*), dan pengalaman pembayaran online 1-klik yang mulus (*Seamless Checkout*).
    - Tema utama: **Emerald Green (#059669 / #10B981)** yang merefleksikan nilai-nilai keislaman dan ketenangan madrasah.
 

@@ -18,9 +18,9 @@
 | Institusi | MTs. Miftahul 'Ulum / Yayasan Perguruan Islam Miftahul 'Ulum |
 | Target Pengguna | Super Admin (Kepala Yayasan / Kepala Bendahara), Admin (Kasir / Staf Keuangan), Orang Tua / Wali Santri |
 | Backend | Laravel 12 (PHP 8.2+) |
-| Admin Panel | Filament 5 |
-| Parent Portal | Blade + Tailwind CSS (Emerald Green Theme) |
-| Payment Gateway | Midtrans (Snap & Webhook) |
+| Admin Panel | Filament 5 (`/admin`) |
+| Parent Portal | Filament 5 Multi-Panel (`/portal` - Emerald Green Theme) |
+| Payment Gateway | Midtrans (Snap & Webhook Callback) |
 | Spreadsheet Engine | PhpSpreadsheet (Native `.xlsx`) |
 | PDF Engine | DomPDF |
 | Database | MySQL |
@@ -179,7 +179,7 @@ Struktur madrasah terdiri atas 3 jenjang kelas MTs dengan pembagian rombel khusu
 
 ### 8.1 Pembayaran Online Midtrans Snap
 - Metode pembayaran yang didukung: QRIS (GoPay, ShopeePay, DANA, OVO, LinkAja), Virtual Account (BRI, BCA, BNI, Mandiri, Permata), Kartu Kredit/Debit, dan Gerai Retail (Indomaret/Alfamart).
-- Verifikasi otomatis secara *real-time* via webhook listener (`/api/midtrans/webhook`).
+- Verifikasi otomatis secara *real-time* via webhook listener (`/payment/callback`).
 
 ### 8.2 Loket Kasir Pembayaran Tunai / Manual
 - Admin menerima pembayaran tunai atau transfer langsung ke rekening BRI madrasah:

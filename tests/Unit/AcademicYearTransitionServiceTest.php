@@ -55,4 +55,15 @@ class AcademicYearTransitionServiceTest extends TestCase
         $result['new_year']->delete();
         AcademicYear::where('name', '2026/2027')->update(['is_active' => true]);
     }
+
+    public function test_transition_service_rejects_duplicate_academic_year_name(): void
+    {
+        $this->expectException(\DomainException::class);
+        $service = new AcademicYearTransitionService;
+        $service->startNewAcademicYear(
+            name: '2026/2027',
+            startDate: '2026-07-15',
+            endDate: '2027-07-14'
+        );
+    }
 }

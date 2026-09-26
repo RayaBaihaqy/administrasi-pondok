@@ -12,7 +12,7 @@
 Sebelum melakukan perubahan kode pada repository ini, Agent wajib memahami struktur dokumen terkait:
 - [PRD.md](file:///c:/Projects/administrasi-pondok/instruction/PRD.md): Dokumen Kebutuhan Produk & Fungsionalitas.
 - [ARCHITECTURE.md](file:///c:/Projects/administrasi-pondok/instruction/ARCHITECTURE.md): Arsitektur Teknis, Layering, & Integrasi.
-- [SCHEMA.md](file:///c:/Projects/administrasi-pondok/instruction/SCHEMA.md): Spesifikasi 25 Tabel & Relasi Database.
+- [SCHEMA.md](file:///c:/Projects/administrasi-pondok/instruction/SCHEMA.md): Spesifikasi Skema Database & 26 Migrasi.
 - [DESIGN.md](file:///c:/Projects/administrasi-pondok/instruction/DESIGN.md): Standar UI/UX, Tema Emerald Green, & Visual Status.
 - [RULES.md](file:///c:/Projects/administrasi-pondok/instruction/RULES.md): Aturan Bisnis, Otorisasi, & Integritas Finansial.
 
@@ -24,11 +24,11 @@ Sebelum melakukan perubahan kode pada repository ini, Agent wajib memahami struk
 |---|---|---|
 | Backend | Laravel 12.x (PHP 8.2+) | Gunakan Eloquent ORM, Form Requests, dan Service Classes |
 | Admin UI | Filament 5.x | Pertahankan konfigurasi panel Filament pada `app/Filament` |
-| Parent Portal | Blade + Tailwind CSS | Gunakan tema Emerald Green (`emerald-600`) |
+| Parent Portal | Filament 5 Multi-Panel | Panel Portal Wali Siswa di `/portal` (Tema Emerald) |
 | Excel Engine | PhpSpreadsheet (`ext-zip`) | Wajib format sel eksplisit (Number 0 desimal untuk ID/angka) |
 | PDF Engine | DomPDF | Render via Blade template dengan Base64 image encoding |
 | Linter | Laravel Pint | Jalankan `./vendor/bin/pint` sebelum menyelesaikan task |
-| Test Suite | Pest PHP / PHPUnit | Wajib 100% lulus (**48 Tests, 175 Assertions**) |
+| Test Suite | Pest PHP / PHPUnit | Wajib 100% lulus (**49 Tests, 185 Assertions**) |
 
 ---
 
@@ -63,10 +63,10 @@ Saat data siswa dibuat atau diimpor, status wajib default ke `active` tanpa mema
 ### 3.5 Transisi Tahun Ajaran Baru
 Pembuatan tahun ajaran baru cukup menerima `start_date` dan `end_date`. Nama tahun ajaran (contoh: `2026/2027`) digenerate otomatis oleh model/service.
 
-### 3.6 Profil & Tanda Tangan Digital Bendahara
+### 3.6 Profil & Tanda Tangan Digital Bendahara (Historical Snapshot)
 Halaman Profile staf di `/admin/profile` (label "Profile") mengelola `name` dan `signature_path` pada tabel `users`.
 Setelah penyimpanan profil berhasil, sistem mengarahkan admin kembali ke dashboard utama (`/admin`).
-Dokumen PDF (`receipt.blade.php` & `invoice.blade.php`) secara dinamis mengambil data bendahara aktif via `User::getActiveTreasurer()->getSignatureBase64()`.
+Dokumen PDF (`receipt.blade.php` & `invoice.blade.php`) menggunakan historical snapshot `$receipt->getSignatureBase64()` & `$invoice->getSignatureBase64()` dengan fallback ke bendahara aktif via `User::getActiveTreasurer()->getSignatureBase64()`.
 
 ### 3.7 Autentikasi Ganda (Dual Identifier Login)
 Login mendukung Email atau Nomor Telepon (`08xx`, `+628xx`, `628xx`) dengan pesan error terisolasi:
@@ -101,5 +101,5 @@ Saat melakukan penambahan atau modifikasi fitur, ikuti urutan kerja:
    ```powershell
    php artisan test
    ```
-   Pastikan seluruh **48 tests** berstatus hijau (PASS).
+   Pastikan seluruh **49 tests** berstatus hijau (PASS).
 5. **Penyelarasan Dokumentasi**: Pastikan seluruh berkas `.md` tetap selaras dengan perubahan kode yang dilakukan.

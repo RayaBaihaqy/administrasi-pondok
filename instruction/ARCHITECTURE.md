@@ -12,8 +12,8 @@
 | Komponen | Spesifikasi & Versi |
 |---|---|
 | Framework Backend | Laravel 12.x (PHP 8.2+) |
-| Panel Administrasi | Filament 5.x |
-| Portal Wali Santri | Laravel Blade + Tailwind CSS (Emerald Green Theme) |
+| Panel Administrasi | Filament 5.x (`/admin`) |
+| Portal Wali Santri | Filament 5 Multi-Panel (`/portal` - Emerald Green Theme) |
 | Database Relasional | MySQL 8.0+ / MariaDB 10.4+ |
 | Payment Gateway | Midtrans Snap API & Webhook Notification Listener |
 | PDF Generator Engine | DomPDF (`barryvdh/laravel-dompdf`) |
@@ -33,7 +33,7 @@ Aplikasi dibangun menggunakan pola **Modular Monolith** dengan pemisahan domain 
 ├───────────────────────────────┬─────────────────────────────────────────┤
 │ Admin & Super Admin Panel     │ Parent / Wali Portal                    │
 │ URL: /admin                   │ URL: /portal                            │
-│ Framework: Filament 5         │ Framework: Blade + Tailwind CSS         │
+│ Framework: Filament 5 (Admin) │ Framework: Filament 5 (Parent Panel)    │
 └───────────────┬───────────────┴───────────────────┬─────────────────────┘
                 │                                   │
                 ▼                                   ▼
@@ -43,11 +43,11 @@ Aplikasi dibangun menggunakan pola **Modular Monolith** dengan pemisahan domain 
 │ 1. Authentication Layer (Dual-Identifier: Email / Phone + Bcrypt)        │
 │ 2. Authorization & RBAC (Filament Policies, Parent-Student Scoping)      │
 │ 3. Domain Services:                                                     │
-│    ├── BillService (Bulk generation, installment calculation, pricing)  │
+│    ├── BillingService (Bulk generation, installment calculation, prices)│
 │    ├── PaymentService (Midtrans Snap token, manual cashier, validation) │
-│    ├── PromotionService (Academic year transition & mass promotion)     │
+│    ├── AcademicYearTransitionService (TA transition & mass promotion)   │
 │    ├── StudentImportService (Native Excel .xlsx & parent provisioning)  │
-│    └── WhatsAppNotificationService (wa.me payload formatting & logging) │
+│    └── WhatsAppAutomationService (wa.me payload formatting & logging)   │
 │ 4. Document Rendering Layer (DomPDF: Invoice & Kuitansi Sah)             │
 │ 5. Audit Trail Observer (Immutable tracking on all financial mutations)  │
 └───────────────────────────────────┬─────────────────────────────────────┘
@@ -178,7 +178,7 @@ Tanda tangan digital bendahara dikelola secara dinamis melalui halaman Profile (
 1. Wali siswa mengklik tombol "Bayar Online" di Portal Wali.
 2. Server membuat transaksi pembayaran berstatus `pending` dan meminta Snap Token ke API Midtrans.
 3. Popup Midtrans Snap terbuka di layar (QRIS, VA, CC, Retail).
-4. Setelah transaksi diselesaikan oleh wali siswa, Midtrans mengirimkan HTTP POST Notification Webhook ke endpoint `/api/midtrans/webhook`.
+4. Setelah transaksi diselesaikan oleh wali siswa, Midtrans mengirimkan HTTP POST Notification Webhook ke endpoint `/payment/callback`.
 
 ### 6.2 Idempotensi Webhook Listener
 - Webhook memverifikasi `signature_key` menggunakan rumus:
@@ -211,26 +211,26 @@ Tanda tangan digital bendahara dikelola secara dinamis melalui halaman Profile (
 ```text
 c:\Projects\administrasi-pondok\
 ├── app/
-│   ├── Filament/               # Resource, Page, & Widget Filament Panel Admin
-│   │   ├── Pages/              # Dashboard, AcademicYearManagement, Profile (EditProfile)
+│   ├── Console/Commands/       # SPP Generator, Overdue Detect, Due Reminders
+│   ├── Filament/               # Resource, Page, & Widget Filament Multi-Panel
+│   │   ├── Pages/              # Dashboard, Reports, Profile (EditProfile)
+│   │   ├── Parent/             # Multi-Panel Portal Khusus Orang Tua / Wali (/portal)
 │   │   └── Resources/          # StudentResource, BillResource, PaymentResource, dll.
-│   ├── Http/
-│   │   ├── Controllers/        # PortalController, DocumentController, WebhookController
-│   │   └── Middleware/         # RoleMiddleware, CheckParentAccess
-│   ├── Models/                 # Eloquent Models (User, Student, Bill, Payment, dll.)
-│   └── Services/               # BillService, PaymentService, ImportService, WhatsAppService
+│   ├── Http/Controllers/       # DocumentController (PDF Publik) & PaymentController (Callback Midtrans)
+│   ├── Models/                 # 17 Eloquent Models (User, Student, Bill, Payment, dll.)
+│   ├── Providers/Filament/     # AdminPanelProvider & ParentPanelProvider
+│   └── Services/               # BillingService, PaymentService, ImportService, WhatsAppAutomationService
 ├── config/
-│   ├── school.php              # Konfigurasi Identitas Madrasah, Bank BRI, Default Due Date
+│   ├── school.php              # Konfigurasi Identitas Madrasah, Rekening BRI & Pejabat Bendahara
 │   └── midtrans.php            # Konfigurasi Midtrans Server & Client Keys
 ├── database/
 │   ├── migrations/             # 26 file migrasi database
 │   └── seeders/                # DatabaseSeeder, AcademicYearSeeder, PaymentTypeSeeder, dll.
-├── resources/
-│   └── views/
-│       ├── documents/          # Template PDF DomPDF (invoice.blade.php, receipt.blade.php)
-│       └── portal/             # Blade Views Portal Wali Santri (Emerald Green)
+├── resources/views/
+│   ├── pdf/                    # Template PDF DomPDF (invoice.blade.php, receipt.blade.php)
+│   └── payment/                # View status respons Midtrans (status.blade.php)
 ├── routes/
-│   ├── web.php                 # Web & Portal Routes
-│   └── api.php                 # Midtrans Webhook Route
-└── tests/                      # 49 Automated Test Suites (Pest / PHPUnit)
+│   ├── web.php                 # Web, Portal, Public PDF Docs & Midtrans Callback Route
+│   └── console.php             # Schedule artisan command hooks
+└── tests/                      # 49 Automated Test Suites (PHPUnit)
 ```

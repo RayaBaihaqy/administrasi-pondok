@@ -10,6 +10,8 @@ class PaymentEvidence extends Model
 {
     use HasFactory;
 
+    protected $table = 'payment_evidences';
+
     protected $fillable = [
         'payment_id',
         'file_name',

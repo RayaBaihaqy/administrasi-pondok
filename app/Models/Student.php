@@ -74,25 +74,26 @@ class Student extends Model
 
         $level = (int) $classLevel;
 
+        $defaultRombels = match ($level) {
+            7 => ['1', '2', '3'],
+            8, 9 => ['1', '2', '3', '4'],
+            default => ['1', '2', '3'],
+        };
+
         $existing = static::active()
             ->where('class_level', $level)
             ->whereNotNull('rombel')
             ->where('rombel', '!=', '')
             ->distinct()
             ->pluck('rombel')
+            ->all();
+
+        $allRombels = collect(array_merge($defaultRombels, $existing))
+            ->unique()
             ->sort()
             ->values();
 
-        if ($existing->isEmpty()) {
-            $defaultRombels = match ($level) {
-                7 => ['1', '2', '3'],
-                8, 9 => ['1', '2', '3', '4'],
-                default => ['1', '2', '3'],
-            };
-            $existing = collect($defaultRombels);
-        }
-
-        return $existing->mapWithKeys(fn ($r) => [$r => "Kelas {$level}.{$r}"])->all();
+        return $allRombels->mapWithKeys(fn ($r) => [(string) $r => "Kelas {$level}.{$r}"])->all();
     }
 
     // ─── Relationships ───────────────────────────────────────
