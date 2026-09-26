@@ -62,7 +62,6 @@ class WhatsAppAutomationService
             ."📄 Unduh Kuitansi PDF Resmi Berstempel:\n"
             ."{$receiptPdfUrl}\n\n"
             ."Terima kasih atas partisipasi dan kerja sama Bapak/Ibu dalam mendukung pendidikan putra/putri tercinta.\n\n"
-            ."Jazakumullah Khairan Katsiran\n"
             ."Wassalamu'alaikum Warahmatullahi Wabarakatuh\n\n"
             ."Bendahara MTs Miftahul 'Ulum";
 
@@ -151,7 +150,6 @@ class WhatsAppAutomationService
             ."📄 Unduh Invoice Tagihan PDF Resmi:\n"
             ."{$invoicePdfUrl}\n\n"
             ."Mohon untuk melakukan penyelesaian pembayaran sebelum tanggal jatuh tempo. Terima kasih atas perhatian dan kerja sama Bapak/Ibu.\n\n"
-            ."Jazakumullah Khairan Katsiran\n"
             ."Wassalamu'alaikum Warahmatullahi Wabarakatuh\n\n"
             ."Bendahara MTs Miftahul 'Ulum";
 
@@ -240,7 +238,6 @@ class WhatsAppAutomationService
             ."📄 Unduh Invoice Tagihan PDF Resmi:\n"
             ."{$invoicePdfUrl}\n\n"
             ."Mohon untuk melakukan penyelesaian pembayaran sebelum tanggal jatuh tempo. Terima kasih atas perhatian dan kerja sama Bapak/Ibu.\n\n"
-            ."Jazakumullah Khairan Katsiran\n"
             ."Wassalamu'alaikum Warahmatullahi Wabarakatuh\n\n"
             ."Bendahara MTs Miftahul 'Ulum";
 
