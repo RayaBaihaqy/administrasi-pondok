@@ -13,26 +13,29 @@ Apabila terjadi keraguan dalam implementasi, urutan prioritas yang wajib dipatuh
 1. **Keamanan Sistem & Integritas Finansial** (*Financial Correctness & Idempotency*).
 2. **Kesesuaian Hak Akses & Otorisasi Pengguna** (*Role-Based Access Control*).
 3. **Kesesuaian Tarif Resmi Klien (11 Pos Pembayaran)**.
-4. **Kenyamanan & Kejelasan Pengalaman Pengguna (UI/UX)**.
+4. **Kenyamanan & Kejelasan Pengalaman Pengguna (UI/UX - Zero Raw Error Leaks)**.
 
 ---
 
 # 2. Aturan Hak Akses & Pengguna (User & RBAC Rules)
 
 ### 2.1 Role Super Admin (Kepala Yayasan / Kepala Bendahara)
-- Memiliki wewenang penuh atas seluruh fitur operasional Admin.
+- **Arsitektur Singleton Super Admin**:
+  - Hanya boleh ada 1 akun Super Admin di dalam sistem (`superadmin@pondok.test`).
+  - Sistem menolak pembuatan akun Super Admin kedua, menolak promosi role ke `super_admin`, dan menolak penghapusan akun Super Admin utama.
 - **Wewenang Eksklusif**:
-  - Mengubah matriks tarif pada 11 pos pembayaran resmi.
+  - Mengelola akun staf operasional (**Admin**) via menu **Kelola Admin** (`/admin/users`).
+  - Mengubah master tarif pada 11 pos pembayaran resmi.
   - Memulai tahun ajaran baru dan mengeksekusi kenaikan kelas massal.
-  - Mengakses log Audit Trail sistem yang bersifat permanen (*immutable*).
-  - Mengelola profil dan memperbarui tanda tangan digital bendahara pada menu `Profile` (`/admin/profile`). Setelah simpan berhasil, sistem secara otomatis mengarahkan admin kembali ke dashboard utama (`/admin`).
+  - Mengakses log Audit Trail sistem yang bersifat permanen (*immutable*) di `/admin/audit-logs`.
+  - Mengelola profil dan memperbarui tanda tangan digital bendahara pada menu `Profile` (`/admin/profile`) dengan auto-redirect kembali ke dashboard utama.
 
 ### 2.2 Role Admin (Operator Keuangan / Kasir)
-- Menjalankan operasional pencatatan harian, mengimpor siswa via Excel `.xlsx`, menerbitkan tagihan, mutasi siswa pindah, dan menerima pembayaran kasir offline.
-- **Batasan**: Tidak berhak mengubah master tarif nominal pos pembayaran dan tidak dapat melihat log audit sistem.
+- Menjalankan operasional pencatatan harian, mengimpor siswa via Excel `.xlsx`, menerbitkan tagihan, mutasi siswa pindah, menerima pembayaran kasir offline, dan mengirimkan pesan WhatsApp.
+- **Batasan**: Tidak berhak mengakses menu Kelola Admin, tidak berhak mengubah master tarif nominal pos pembayaran, tidak berhak mengelola master tahun ajaran, dan tidak dapat melihat log audit sistem.
 
 ### 2.3 Role Parent (Orang Tua / Wali Santri)
-- **Isolasi Multi-Tenant Mutlak**: Hanya dapat melihat dan membayar tagihan putra/putri kandungnya sendiri (`parent_id == Auth::user()->parent->id`).
+- **Isolasi Multi-Tenant Mutlak**: Hanya dapat melihat dan membayar tagihan putra/putri kandungnya sendiri (`parent_id == Auth::user()->parentProfile?->id`).
 - Tidak memiliki akses ke panel internal sekolah (`/admin`).
 
 ### 2.4 Aturan Autentikasi Ganda (Dual Identifier Login)
@@ -42,6 +45,10 @@ Apabila terjadi keraguan dalam implementasi, urutan prioritas yang wajib dipatuh
   - Jika format email tidak ditemukan: `"Email tidak ditemukan."`
   - Jika format nomor telepon tidak ditemukan: `"Nomor telepon tidak ditemukan."`
   - Jika identitas terdaftar tetapi kata sandi salah: `"Password salah."`
+
+### 2.5 Aturan Penanganan Kesalahan Ramah Pengguna (Zero Raw Error Leaks)
+- Setiap aksi create, edit, atau transaksi yang mengalami kegagalan validasi atau benturan data duplikat (NISN, nomor HP, email) wajib menampilkan pesan peringatan interaktif berupa pop-up / toast notification merah (danger) berbahasa Indonesia alami.
+- Sistem dilarang keras menampilkan stack trace SQL, exception mentah, atau error 500 ke hadapan pengguna.
 
 ---
 
@@ -102,14 +109,6 @@ Sistem mengunci 11 kategori pos pembayaran resmi beserta nominal bakunya:
 10. **Study Tour**: Rp 450.000 (Satu kali bayar, Tingkat 8 / 9).
 11. **Akhir Tahun (Pelepasan & Wisuda)**: Rp 2.000.000 (Satu kali bayar, khusus Kelas 9).
 
-### 4.1 Prioritas Penentuan Tarif (Price Resolution Hierarchy)
-```text
-1. Class Level + Rombel Price Matrix (Matriks Tarif Kelas & Rombel Spesifik)
-2. Class Level Price Matrix (Matriks Tarif per Tingkat Kelas)
-3. Academic Year Default Price (Tarif Bawaan Tahun Ajaran)
-4. Payment Type Default Price (Tarif Bawaan Master Pos Biaya)
-```
-
 ---
 
 # 5. Aturan Penagihan (Billing) & Transaksi Kasir
@@ -142,26 +141,25 @@ Sistem mengunci 11 kategori pos pembayaran resmi beserta nominal bakunya:
 - Nama resmi dan tanda tangan digital bendahara dikelola di `/admin/profile`.
 - **Aturan Immutabilitas Dokumen (Historical Snapshotting)**:
   - Setiap kali Invoice atau Kuitansi baru dibuat, sistem wajib melakukan **snapshot** permanen atas `treasurer_name` dan `treasurer_signature_path` dari profil bendahara yang sedang aktif ke tabel `invoices` dan `receipts`.
-  - Dokumen masa lalu yang terbit saat masa jabatan bendahara terdahulu (misal: "Bu Putri") **wajib selamanya mencetak nama dan tanda tangan Bu Putri** tanpa terpengaruh perubahan profil di masa mendatang.
-  - Dokumen baru yang terbit setelah pergantian bendahara baru (misal: "Pak Putra") otomatis mengunci nama dan tanda tangan Pak Putra.
-  - Gambar tanda tangan dirender menggunakan format Base64 (`$receipt->getSignatureBase64()` / `$invoice->getSignatureBase64()`) untuk performa instan dan rendering bebas hambatan pada DomPDF.
+  - Dokumen masa lalu yang terbit saat masa jabatan bendahara terdahulu wajib selamanya mencetak nama dan tanda tangan pejabat terkait tanpa terpengaruh perubahan di masa depan.
+  - Gambar tanda tangan dirender menggunakan format Base64 untuk performa instan dan rendering bebas hambatan pada DomPDF.
 
 ### 6.2 Nomor Dokumen Unik
 - Nomor Invoice: `INV-{NIS}-{YYYYMM}-{RAND}`
-- Nomor Kuitansi Kasir Manual: `PAY-MAN-{NIS}-{YYYYMMDD}-{RAND}`
-- Nomor Kuitansi Midtrans: `PAY-MID-{NIS}-{YYYYMMDD}-{RAND}`
+- Nomor Kuitansi Kasir Manual: `PAY-MANUAL-{NIS}-{KODE_JENIS}-{INDEX}`
+- Nomor Kuitansi Midtrans: `PAY-ONLINE-{NIS}-{KODE_JENIS}-{INDEX}`
 
 ---
 
-# 7. Aturan Notifikasi WhatsApp 1-Klik (`wa.me`)
+# 7. Aturan Notifikasi WhatsApp 1-Klik (`wa.me`) & Audit Log
 
-- Tombol kirim WhatsApp tidak membebani biaya API langganan pihak ketiga, melainkan menyusun link `https://wa.me/{phone}?text={encoded_message}`.
-- Nomor tujuan dinormalisasi otomatis ke format internasional `628xx`.
-- Seluruh pengiriman pesan dicatat ke tabel `whatsapp_logs` untuk audit penagihan.
+- Tombol kirim WhatsApp menyusun link `https://wa.me/{phone}?text={encoded_message}` bebas biaya langganan gateway.
+- Seluruh riwayat pengiriman tagihan baru, pengingat tempo, dan pembayaran sukses dicatat otomatis ke tabel `whatsapp_logs`.
+- Seluruh mutasi model dicatat otomatis ke tabel `audit_logs` melalui Observers.
 
 ---
 
 # 8. Aturan Uji Otomatis & Pemeliharaan Kode
 
-- Seluruh alur kerja sistem wajib tercover oleh rangkaian pengujian otomatis (*Automated Test Suite*): **49 Tests Passing 100% (185 Assertions)**.
-- Kode PHP wajib diformat mengikuti standar PSR-12 menggunakan **Laravel Pint** (156 files clean).
+- Seluruh alur kerja sistem wajib tercover oleh rangkaian pengujian otomatis (*Automated Test Suite*): **71 Tests Passing 100% (285 Assertions)**.
+- Kode PHP wajib diformat mengikuti standar PSR-12 menggunakan **Laravel Pint**.

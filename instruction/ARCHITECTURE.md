@@ -18,8 +18,8 @@
 | Payment Gateway | Midtrans Snap API & Webhook Notification Listener |
 | PDF Generator Engine | DomPDF (`barryvdh/laravel-dompdf`) |
 | Spreadsheet Engine | PhpSpreadsheet (`phpoffice/phpspreadsheet`) |
-| Code Styling & Linter | Laravel Pint (156 files formatted) |
-| Automated Test Suite | Pest PHP / PHPUnit (49 tests, 185 assertions) |
+| Code Styling & Linter | Laravel Pint (Clean formatted) |
+| Automated Test Suite | Pest PHP / PHPUnit (71 tests, 285 assertions — 100% PASS) |
 
 ---
 
@@ -41,15 +41,16 @@ Aplikasi dibangun menggunakan pola **Modular Monolith** dengan pemisahan domain 
 │                       LARAVEL 12 APPLICATION LAYER                      │
 ├─────────────────────────────────────────────────────────────────────────┤
 │ 1. Authentication Layer (Dual-Identifier: Email / Phone + Bcrypt)        │
-│ 2. Authorization & RBAC (Filament Policies, Parent-Student Scoping)      │
-│ 3. Domain Services:                                                     │
+│ 2. Authorization & RBAC (Singleton Super Admin, Admin Management)        │
+│ 3. Error Handling Layer (HasFriendlyNotifications + lang/id validation)  │
+│ 4. Domain Services:                                                     │
 │    ├── BillingService (Bulk generation, installment calculation, prices)│
-│    ├── PaymentService (Midtrans Snap token, manual cashier, validation) │
+│    ├── PaymentService (Midtrans Snap token, manual cashier, webhook)    │
 │    ├── AcademicYearTransitionService (TA transition & mass promotion)   │
 │    ├── StudentImportService (Native Excel .xlsx & parent provisioning)  │
 │    └── WhatsAppAutomationService (wa.me payload formatting & logging)   │
-│ 4. Document Rendering Layer (DomPDF: Invoice & Kuitansi Sah)             │
-│ 5. Audit Trail Observer (Immutable tracking on all financial mutations)  │
+│ 5. Document Rendering Layer (DomPDF: Invoice & Kuitansi Sah)             │
+│ 6. Automatic Audit Observers (All models: User, Student, Parent, etc.)  │
 └───────────────────────────────────┬─────────────────────────────────────┘
                                     │
                 ┌───────────────────┴───────────────────┐
@@ -67,12 +68,12 @@ Aplikasi dibangun menggunakan pola **Modular Monolith** dengan pemisahan domain 
 
 ---
 
-# 3. Lapisan Autentikasi & Otorisasi (Auth Architecture)
+# 3. Lapisan Autentikasi, Otorisasi & Manajemen Pengguna (Auth Architecture)
 
 ### 3.1 Dual-Identifier Login Architecture
 Sistem mengimplementasikan otentikasi kustom yang menerima identifier berupa **Email** atau **Nomor Telepon / WhatsApp**:
 - **Normalisasi Nomor Telepon**: Format lokal (`0812...`, `0857...`) dinormalisasi secara terpadu agar cocok dengan database (`08xx` atau format internasional `628xx`).
-- **Penanganan Pesan Kesalahan**:
+- **Penanganan Pesan Kesalahan Terisolasi**:
   ```php
   // Logika Autentikasi Terisolasi:
   if (filter_var($loginInput, FILTER_VALIDATE_EMAIL)) {
@@ -89,41 +90,71 @@ Sistem mengimplementasikan otentikasi kustom yang menerima identifier berupa **E
   }
   ```
 
-### 3.2 Otorisasi & Isolasi Multi-Tenant Portal Wali
-- **Panel Admin (`/admin`)**: Dibatasi hanya untuk akun ber-role `super_admin` dan `admin`.
+### 3.2 Arsitektur Singleton Super Admin & Model Guard
+- **Single Super Admin Rule**: Sistem hanya mengizinkan 1 akun Super Admin utama (`superadmin@pondok.test`).
+- **Model Lifecycle Hooks (`User::booted`)**:
+  - `creating`: Mencegah penambahan akun ber-role `super_admin` jika sudah ada akun `super_admin`.
+  - `updating`: Mencegah modifikasi/promosi role user lain menjadi `super_admin`.
+  - `deleting`: Mencegah penghapusan akun ber-role `super_admin`.
+
+### 3.3 Manajemen Akun Staf Admin (`UserResource`)
+- **Navigasi**: Terletak di bawah grup **Manajemen Pengguna** -> **Kelola Admin**.
+- **Otorisasi**: Eksklusif hanya dapat diakses oleh Super Admin (`canViewAny`, `canCreate`, `canEdit`, `canDelete`).
+- **Filter Tabel**: Tabel query dimodifikasi khusus `where('role', User::ROLE_ADMIN)` sehingga akun Super Admin tidak tampil di tabel dan tidak dapat diubah/dihapus dari resource ini.
+- **Fitur Reset Password**: Modal action khusus untuk Super Admin mengatur kata sandi baru bagi staf admin.
+
+### 3.4 Otorisasi & Isolasi Multi-Tenant Portal Wali
+- **Panel Admin (`/admin`)**: Dibatasi hanya untuk akun internal (`super_admin` dan `admin`).
 - **Portal Wali (`/portal`)**: Dibatasi untuk akun ber-role `parent`.
-- **Query Scoping**: Portal wali murid menerapkan *global scope* yang secara ketat memfilter data siswa hanya yang memiliki relasi `parent_id == Auth::user()->parent->id`.
+- **Query Scoping**: Portal wali murid menerapkan *scoping* query di setiap resource (`MyBillsResource`, `MyPaymentsResource`, `MyStudentsResource`) yang secara ketat memfilter data hanya milik `parent_id == Auth::user()->parentProfile?->id`.
 
 ---
 
-# 4. Tata Kelola Profil & Tanda Tangan Digital Bendahara
+# 4. Lapisan Penanganan Error Ramah Pengguna (Friendly Error Architecture)
 
-### 4.1 Arsitektur Tanda Tangan Digital, Redirect Profil & Snapshot Historis (Document Immutability)
+### 4.1 Trait `HasFriendlyNotifications`
+Seluruh form resource Create & Edit mengimplementasikan trait `App\Filament\Traits\HasFriendlyNotifications`:
+```php
+trait HasFriendlyNotifications
+{
+    protected function onValidationError(ValidationException $exception): void
+    {
+        $errors = $exception->validator->errors()->all();
+        $body = count($errors) > 1
+            ? implode("\n• ", array_merge(['Mohon periksa kembali input berikut:'], $errors))
+            : ($errors[0] ?? 'Terdapat kesalahan pada isian form.');
+
+        Notification::make()
+            ->title('Gagal Menyimpan Data')
+            ->body($body)
+            ->danger()
+            ->persistent()
+            ->send();
+    }
+}
+```
+
+### 4.2 Kamus Validasi Bahasa Indonesia (`lang/id/validation.php`)
+Menyediakan pesan error terjemahan yang jelas dan manusiawi untuk setiap aturan validasi (`required`, `unique`, `email`, `numeric`, `min`, `max`, `after`, dsb.), sehingga pengguna tidak pernah melihat pesan bawaan bahasa Inggris atau teks teknis database.
+
+---
+
+# 5. Tata Kelola Profil & Tanda Tangan Digital Bendahara
+
+### 5.1 Arsitektur Tanda Tangan Digital & Snapshot Historis (Document Immutability)
 Tanda tangan digital bendahara dikelola secara dinamis melalui halaman Profile (`/admin/profile`):
 - Berkas tanda tangan disimpan di disk privat/publik (`storage/app/public/signatures/...`).
-- Model `User`, `Invoice`, dan `Receipt` menyediakan *helper method* `getSignatureBase64()` untuk mengambil data tanda tangan dalam format Base64 yang siap dirender secara instan oleh DomPDF tanpa kendala URL lokal:
-  ```php
-  public function getSignatureBase64(): ?string
-  {
-      if (!$this->treasurer_signature_path || !Storage::disk('public')->exists($this->treasurer_signature_path)) {
-          return null;
-      }
-      $image = Storage::disk('public')->get($this->treasurer_signature_path);
-      $mime = Storage::disk('public')->mimeType($this->treasurer_signature_path);
-      return 'data:' . $mime . ';base64,' . base64_encode($image);
-  }
-  ```
+- Model `User`, `Invoice`, dan `Receipt` menyediakan *helper method* `getSignatureBase64()` untuk mengambil data tanda tangan dalam format Base64 yang siap dirender secara instan oleh DomPDF tanpa kendala URL lokal.
 - **Auto-Redirect Handler**: `app/Filament/Pages/Auth/EditProfile.php` meng-override `getRedirectUrl(): ?string` untuk mengarahkan pengguna langsung kembali ke URL dashboard Filament (`filament()->getUrl()`) sesaat setelah penyimpanan profil berhasil.
 - **Historical Snapshotting (Document Immutability)**:
   - Saat `Invoice` atau `Receipt` dibuat (`creating` lifecycle hook), sistem mengunci `treasurer_name` dan `treasurer_signature_path` dari bendahara aktif saat itu ke dalam basis data.
-  - Saat terjadi pergantian bendahara di masa depan (misal dari Bu Putri ke Pak Putra), dokumen-dokumen yang diterbitkan di era Bu Putri akan **tetap abadi** menampilkan nama dan tanda tangan Bu Putri saat dibuka atau dicetak ulang kapan saja.
-  - Dokumen baru yang terbit setelah pergantian otomatis mengunci nama dan tanda tangan pejabat baru (Pak Putra).
+  - Dokumen masa lalu yang terbit di era pejabat bendahara terdahulu tetap abadi dengan nama dan tanda tangan pejabat bersangkutan.
 
 ---
 
-# 5. Arsitektur Domain & Layanan Inti
+# 6. Arsitektur Domain & Layanan Inti
 
-### 5.1 Penagihan & Matriks Tarif (Billing Architecture)
+### 6.1 Penagihan & Matriks Tarif (Billing Architecture)
 - **11 Pos Pembayaran Resmi**:
   1. `SPP`: Rp 75.000 / bln
   2. `PPDB`: Rp 1.190.000 (Satu Kali)
@@ -141,25 +172,21 @@ Tanda tangan digital bendahara dikelola secara dinamis melalui halaman Profile (
   Class + Rombel Price Matrix ──> Class Price Matrix ──> Academic Year Price ──> Payment Type Default
   ```
 
-### 5.2 Skema Cicilan (Installment Engine - Sistem A)
+### 6.2 Skema Cicilan (Installment Engine - Sistem A)
 - Mendukung pemecahan tagihan menjadi $N$ kali angsuran bulanan.
 - *Rounding Adjustment*: Sisa pembagian desimal ditambahkan pada angsuran ke-$N$ untuk memastikan $\sum \text{Installment} \equiv \text{Total Amount}$.
 
-### 5.3 Import Siswa Native Excel (.xlsx)
-- Memanfaatkan library `phpoffice/phpspreadsheet` dengan ekstensi PHP `ext-zip`.
-- Generator template menghasilkan file asli `.xlsx` dengan format sel:
+### 6.3 Import Siswa Native Excel (.xlsx)
+- Memanfaatkan library `phpoffice/phpspreadsheet` dengan format sel terstandarisasi:
   - `NumberFormat::FORMAT_NUMBER` (0 Desimal) untuk NISM, Tingkat Kelas, dan Tahun Masuk.
   - `NumberFormat::FORMAT_TEXT` untuk NISN dan Nomor Telepon.
-- Anti Scientific Notation Parser: Sistem membaca nilai mentah sel (*raw value* / *formatted string*) untuk mencegah konversi otomatis menjadi `e+17`.
+- Anti Scientific Notation Parser: Sistem membersihkan notasi ilmiah `e+17` dan formula Excel secara otomatis.
 
-### 5.4 Rombel Dinamis & Transisi Tahun Ajaran
-- Pemilihan rombel difilter dinamis berdasarkan tingkat kelas:
-  - Tingkat 7 $\rightarrow$ Rombel 7.1, 7.2, 7.3
-  - Tingkat 8 $\rightarrow$ Rombel 8.1, 8.2, 8.3, 8.4
-  - Tingkat 9 $\rightarrow$ Rombel 9.1, 9.2, 9.3, 9.4
+### 6.4 Rombel Dinamis & Transisi Tahun Ajaran
+- Pemilihan rombel difilter dinamis berdasarkan tingkat kelas (Kelas 7: 7.1-7.3; Kelas 8: 8.1-8.4; Kelas 9: 9.1-9.4).
 - Pembuatan tahun ajaran baru secara otomatis menghitung nama tahun dari rentang tanggal (`start_date` dan `end_date`), mengaktifkan periode baru, menaikkan tingkat kelas siswa aktif, dan meluluskan siswa tingkat 9.
 
-### 5.5 Manajemen Mutasi Siswa (Student Mutation Engine)
+### 6.5 Manajemen Mutasi Siswa (Student Mutation Engine)
 - **Metode Model Domain**: `Student::mutateOut(string $reason, ?string $date)` & `Student::revertMutation()`.
 - **Transisi Status & Pembatalan Tagihan**:
   ```text
@@ -168,41 +195,34 @@ Tanda tangan digital bendahara dikelola secara dinamis melalui halaman Profile (
                                           ├── Unpaid/Overdue Bills ──> Cancelled (notes appended)
                                           └── Paid Bills / Payments ──> Locked / Preserved for Audit
   ```
-- **Filter Header Tabs**: `ListStudents` menggunakan `Filament\Schemas\Components\Tabs\Tab` untuk mengelompokkan `active`, `withdrawn`, `graduated`, dan `all` dengan penghitung query terindeks.
 
 ---
 
-# 6. Integrasi Payment Gateway (Midtrans)
+# 7. Integrasi Payment Gateway (Midtrans)
 
-### 6.1 Midtrans Snap Flow
+### 7.1 Midtrans Snap Flow
 1. Wali siswa mengklik tombol "Bayar Online" di Portal Wali.
 2. Server membuat transaksi pembayaran berstatus `pending` dan meminta Snap Token ke API Midtrans.
 3. Popup Midtrans Snap terbuka di layar (QRIS, VA, CC, Retail).
 4. Setelah transaksi diselesaikan oleh wali siswa, Midtrans mengirimkan HTTP POST Notification Webhook ke endpoint `/payment/callback`.
 
-### 6.2 Idempotensi Webhook Listener
-- Webhook memverifikasi `signature_key` menggunakan rumus:
-  $$\text{SHA512}(\text{order\_id} + \text{status\_code} + \text{gross\_amount} + \text{ServerKey})$$
-- Transaksi diproses dalam *Database Transaction* (`DB::transaction`) untuk mencegah *race condition* dan *double crediting*.
-- Setelah status pembayaran menjadi `paid`, sisa tagihan (*outstanding balance*) diupdate dan berkas kuitansi sah diterbitkan.
+### 7.2 Idempotensi Webhook Listener
+- Webhook memverifikasi `signature_key` menggunakan SHA512 signature check dengan `hash_equals()`.
+- Transaksi diproses dalam *Database Transaction* (`DB::transaction`).
+- Setelah status pembayaran menjadi `paid`, sisa tagihan diupdate dan bukti pembayaran WhatsApp otomatis dicatat ke log.
 
 ---
 
-# 7. Audit Trail & Keamanan Sistem
+# 8. Audit Trail Otomatis via Model Observers
 
-- **Immutable Audit Log**: Setiap mutasi pada model `Bill`, `Payment`, `Student`, dan `PaymentTypePrice` dicatat ke tabel `audit_logs` secara otomatis melalui Model Observer.
-- **Pencatatan Lengkap**: Menyimpan `user_id`, `actor_role`, `action` (create/update/delete), `auditable_type`, `auditable_id`, `old_values` (JSON), `new_values` (JSON), `ip_address`, dan `user_agent`.
-- **Enkripsi Kata Sandi**: Menggunakan algoritma Bcrypt dengan cost factor 12 rounds.
-
----
-
-# 8. Otomasi Perintah Terjadwal (Artisan Scheduler)
-
-| Perintah Artisan | Frekuensi / Waktu | Deskripsi |
-|---|---|---|
-| `php artisan spp:generate` | Bulanan (Tgl 1, 00:00) | Menerbitkan tagihan SPP bulanan otomatis untuk seluruh siswa aktif |
-| `php artisan bills:detect-overdue` | Harian (00:30) | Mendeteksi dan mengubah status tagihan belum lunas yang melewati tempo menjadi `overdue` |
-| `php artisan bills:send-reminders` | Harian (07:00) | Mengirimkan log pengingat tagihan H-2 jatuh tempo via WhatsApp |
+- **Automatic Observer Tracking**: Seluruh entitas penting diawasi oleh Model Observers (`app/Observers/`) yang didaftarkan di `AppServiceProvider`:
+  - `UserObserver`: mencatat pembuatan, update, dan penghapusan akun admin.
+  - `StudentObserver`: mencatat penambahan siswa, perubahan rombel, mutasi keluar, dan aktivasi kembali.
+  - `ParentProfileObserver`: mencatat perubahan kontak wali murid.
+  - `BillObserver`: mencatat penerbitan tagihan, revisi nominal, dan pembatalan tagihan.
+  - `PaymentObserver`: mencatat transaksi pembayaran kasir manual maupun online.
+  - `AcademicYearObserver` & `PaymentTypeObserver`: mencatat konfigurasi akademik dan tarif.
+- **Pencatatan Lengkap**: Menyimpan `user_id`, `actor_role`, `action`, `auditable_type`, `auditable_id`, `old_values` (JSON), `new_values` (JSON), `ip_address`, dan `user_agent`.
 
 ---
 
@@ -215,9 +235,11 @@ c:\Projects\administrasi-pondok\
 │   ├── Filament/               # Resource, Page, & Widget Filament Multi-Panel
 │   │   ├── Pages/              # Dashboard, Reports, Profile (EditProfile)
 │   │   ├── Parent/             # Multi-Panel Portal Khusus Orang Tua / Wali (/portal)
-│   │   └── Resources/          # StudentResource, BillResource, PaymentResource, dll.
+│   │   ├── Resources/          # UserResource, StudentResource, BillResource, dll.
+│   │   └── Traits/             # HasFriendlyNotifications Trait
 │   ├── Http/Controllers/       # DocumentController (PDF Publik) & PaymentController (Callback Midtrans)
 │   ├── Models/                 # 17 Eloquent Models (User, Student, Bill, Payment, dll.)
+│   ├── Observers/              # 7 Model Observers (Audit Trail Otomatis)
 │   ├── Providers/Filament/     # AdminPanelProvider & ParentPanelProvider
 │   └── Services/               # BillingService, PaymentService, ImportService, WhatsAppAutomationService
 ├── config/
@@ -225,12 +247,13 @@ c:\Projects\administrasi-pondok\
 │   └── midtrans.php            # Konfigurasi Midtrans Server & Client Keys
 ├── database/
 │   ├── migrations/             # 26 file migrasi database
-│   └── seeders/                # DatabaseSeeder, AcademicYearSeeder, PaymentTypeSeeder, dll.
+│   └── seeders/                # DatabaseSeeder, UserSeeder, AcademicYearSeeder, dll.
+├── lang/id/                    # Terjemahan Bahasa Indonesia & Pesan Validasi
 ├── resources/views/
 │   ├── pdf/                    # Template PDF DomPDF (invoice.blade.php, receipt.blade.php)
 │   └── payment/                # View status respons Midtrans (status.blade.php)
 ├── routes/
 │   ├── web.php                 # Web, Portal, Public PDF Docs & Midtrans Callback Route
 │   └── console.php             # Schedule artisan command hooks
-└── tests/                      # 49 Automated Test Suites (PHPUnit)
+└── tests/                      # 71 Automated Test Suites (PHPUnit)
 ```

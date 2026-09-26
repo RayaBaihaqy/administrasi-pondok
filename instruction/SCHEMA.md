@@ -17,6 +17,7 @@
 | Total Migrasi | 26 Migrasi Database Aktif |
 | Konvensi Format Uang | Unsigned Big Integer (Rupiah murni tanpa floating point) |
 | Integritas Transaksional | Foreign Key Constraints + Database Transactions (`DB::transaction`) |
+| Audit Trail Trigger | Model Observers (`app/Observers/`) |
 
 ---
 
@@ -32,8 +33,8 @@
         ▼                                  ▼
 ┌────────────────┐                 ┌────────────────┐
 │   audit_logs   │                 │    students    │
-└────────────────┘                 │(NISN, NISM, 7-9│
-                                   └───────┬────────┘
+│(Observers Auto)│                 │(NIS, NISM, 7-9)│
+└────────────────┘                 └───────┬────────┘
                                            │
          ┌─────────────────────────────────┼─────────────────────────────────┐
          │ 1:N                             │ 1:N                             │ 1:N
@@ -64,7 +65,7 @@
 ---
 
 ## 3.1 `users`
-Menyimpan akun autentikasi seluruh pengguna aplikasi (Super Admin, Admin, dan Orang Tua).
+Menyimpan akun autentikasi seluruh pengguna aplikasi (Super Admin Singleton, Admin Staff, dan Orang Tua).
 
 | Kolom | Tipe Data | Nullable | Index / Constraint | Keterangan |
 |---|---|:---:|---|---|
@@ -91,7 +92,7 @@ Menyimpan data profil orang tua / wali santri yang terhubung dengan akun login.
 | `user_id` | BIGINT UNSIGNED | Tidak | FK (`users.id`), UNIQUE | Relasi akun login |
 | `full_name` | VARCHAR(255) | Tidak | INDEX | Nama lengkap orang tua / wali |
 | `phone` | VARCHAR(30) | Ya | INDEX | Nomor HP / WhatsApp kontak |
-| `email` | VARCHAR(255) | Ya | INDEX | Email kontak utama |
+| `contact_email` | VARCHAR(255) | Ya | INDEX | Email kontak utama |
 | `address` | TEXT | Ya | — | Alamat domisili |
 | `created_at` | TIMESTAMP | Ya | — | Waktu pembuatan |
 | `updated_at` | TIMESTAMP | Ya | — | Waktu pembaruan |
@@ -120,15 +121,15 @@ Menyimpan data induk santri / siswa madrasah.
 |---|---|:---:|---|---|
 | `id` | BIGINT UNSIGNED | Tidak | Primary Key | ID Santri |
 | `parent_id` | BIGINT UNSIGNED | Ya | FK (`parents.id`), INDEX | Relasi ke wali murid |
-| `nisn` | VARCHAR(30) | Tidak | UNIQUE | Nomor Induk Siswa Nasional |
+| `nis` | VARCHAR(30) | Tidak | UNIQUE | Nomor Induk Siswa Nasional (NISN) |
 | `nism` | VARCHAR(30) | Ya | INDEX | Nomor Induk Siswa Madrasah |
 | `full_name` | VARCHAR(255) | Tidak | INDEX | Nama lengkap siswa |
-| `gender` | ENUM('L','P') | Tidak | — | Jenis Kelamin (L = Laki-laki, P = Perempuan) |
+| `gender` | ENUM('male','female') | Tidak | — | Jenis Kelamin |
+| `birth_date` | DATE | Ya | — | Tanggal lahir |
 | `class_level` | TINYINT UNSIGNED | Tidak | INDEX | Tingkat Kelas (`7`, `8`, `9`) |
 | `rombel` | VARCHAR(10) | Tidak | INDEX | Rombel dinamis (`7.1`-`7.3`, `8.1`-`8.4`, `9.1`-`9.4`) |
 | `entry_year` | YEAR | Ya | — | Tahun Masuk |
 | `status` | ENUM | Tidak | INDEX | `active`, `graduated`, `withdrawn`, `inactive` |
-| `email` | VARCHAR(255) | Ya | — | Email kontak siswa |
 | `phone` | VARCHAR(30) | Ya | — | Nomor telepon kontak siswa |
 | `address` | TEXT | Ya | — | Alamat tempat tinggal |
 | `created_at` | TIMESTAMP | Ya | — | Waktu pembuatan |
@@ -161,6 +162,8 @@ Master 11 kategori pos biaya pembayaran resmi madrasah.
 | `name` | VARCHAR(255) | Tidak | INDEX | Nama pos pembayaran |
 | `description` | TEXT | Ya | — | Keterangan rinci pos biaya |
 | `billing_type` | ENUM | Tidak | INDEX | `monthly`, `one_time`, `annual`, `semester` |
+| `default_amount` | BIGINT UNSIGNED | Tidak | — | Nominal bawaan (Rupiah) |
+| `default_due_day` | TINYINT UNSIGNED | Tidak | — | Tanggal jatuh tempo default (tgl 1-31) |
 | `is_active` | BOOLEAN | Tidak | INDEX | Status keaktifan pos tagihan |
 | `allows_installment` | BOOLEAN | Tidak | — | Apakah mendukung cicilan |
 | `created_at` | TIMESTAMP | Ya | — | Waktu pembuatan |
@@ -168,47 +171,33 @@ Master 11 kategori pos biaya pembayaran resmi madrasah.
 
 ---
 
-## 3.7 `payment_type_prices`
-Menyimpan matriks tarif resmi berdasarkan tingkat kelas dan rombel.
-
-| Kolom | Tipe Data | Nullable | Index / Constraint | Keterangan |
-|---|---|:---:|---|---|
-| `id` | BIGINT UNSIGNED | Tidak | Primary Key | ID Tarif |
-| `payment_type_id` | BIGINT UNSIGNED | Tidak | FK (`payment_types.id`) | Relasi pos pembayaran |
-| `academic_year_id` | BIGINT UNSIGNED | Tidak | FK (`academic_years.id`) | Relasi tahun ajaran |
-| `class_level` | TINYINT UNSIGNED | Ya | INDEX | Tingkat Kelas (7, 8, 9 atau null untuk all) |
-| `rombel` | VARCHAR(10) | Ya | INDEX | Rombel spesifik atau null untuk all rombel |
-| `amount` | BIGINT UNSIGNED | Tidak | — | Nominal tarif resmi (Rupiah) |
-| `created_at` | TIMESTAMP | Ya | — | Waktu pembuatan |
-| `updated_at` | TIMESTAMP | Ya | — | Waktu pembaruan |
-
----
-
-## 3.8 `bills`
+## 3.7 `bills`
 Menyimpan tagihan yang diterbitkan kepada siswa.
 
 | Kolom | Tipe Data | Nullable | Index / Constraint | Keterangan |
 |---|---|:---:|---|---|
 | `id` | BIGINT UNSIGNED | Tidak | Primary Key | ID Tagihan |
-| `bill_number` | VARCHAR(100) | Tidak | UNIQUE | Nomor unik tagihan (`BILL-...`) |
+| `bill_number` | VARCHAR(100) | Tidak | UNIQUE | Nomor unik tagihan (`INV-...`) |
 | `student_id` | BIGINT UNSIGNED | Tidak | FK (`students.id`), INDEX | Siswa penerima tagihan |
+| `parent_id` | BIGINT UNSIGNED | Ya | FK (`parents.id`), INDEX | Wali siswa |
 | `payment_type_id` | BIGINT UNSIGNED | Tidak | FK (`payment_types.id`) | Pos pembayaran |
 | `academic_year_id` | BIGINT UNSIGNED | Tidak | FK (`academic_years.id`) | Tahun ajaran tagihan |
-| `month` | TINYINT UNSIGNED | Ya | INDEX | Bulan tagihan (1-12 untuk SPP) |
-| `year` | YEAR | Ya | INDEX | Tahun kalender |
+| `billing_period` | DATE | Ya | INDEX | Periode bulan tagihan |
 | `due_date` | DATE | Tidak | INDEX | Batas akhir pembayaran |
 | `amount` | BIGINT UNSIGNED | Tidak | — | Total nilai tagihan (Rupiah) |
 | `paid_amount` | BIGINT UNSIGNED | Tidak | — | Total yang sudah dibayar |
+| `outstanding_amount`| BIGINT UNSIGNED | Tidak | INDEX | Sisa tagihan belum dibayar |
 | `status` | ENUM | Tidak | INDEX | `unpaid`, `paid`, `overdue`, `cancelled` |
+| `is_installment` | BOOLEAN | Tidak | — | Apakah bagian dari skema cicilan |
 | `installment_number` | TINYINT UNSIGNED | Ya | — | Angsuran ke-N (untuk cicilan) |
-| `total_installments` | TINYINT UNSIGNED | Ya | — | Total tenor angsuran |
-| `notes` | TEXT | Ya | — | Catatan khusus / alasan pembatalan / mutasi |
+| `tenor_count` | TINYINT UNSIGNED | Ya | — | Total tenor angsuran |
+| `notes` | TEXT | Ya | — | Catatan khusus / alasan mutasi / pembatalan |
 | `created_at` | TIMESTAMP | Ya | — | Waktu penerbitan |
 | `updated_at` | TIMESTAMP | Ya | — | Waktu pembaruan |
 
 ---
 
-## 3.9 `payments`
+## 3.8 `payments`
 Menyimpan catatan transaksi pembayaran yang berhasil masuk (baik via loket kasir maupun online Midtrans).
 
 | Kolom | Tipe Data | Nullable | Index / Constraint | Keterangan |
@@ -216,32 +205,33 @@ Menyimpan catatan transaksi pembayaran yang berhasil masuk (baik via loket kasir
 | `id` | BIGINT UNSIGNED | Tidak | Primary Key | ID Transaksi |
 | `payment_number` | VARCHAR(100) | Tidak | UNIQUE | Nomor Kuitansi (`PAY-...`) |
 | `bill_id` | BIGINT UNSIGNED | Tidak | FK (`bills.id`), INDEX | Tagihan yang dibayar |
-| `user_id` | BIGINT UNSIGNED | Tidak | FK (`users.id`) | Akun pencatat / pembayar |
+| `student_id` | BIGINT UNSIGNED | Tidak | FK (`students.id`), INDEX | Siswa pembayar |
+| `parent_id` | BIGINT UNSIGNED | Ya | FK (`parents.id`), INDEX | Wali siswa |
+| `recorder_id` | BIGINT UNSIGNED | Ya | FK (`users.id`) | Staf internal pencatat |
 | `amount` | BIGINT UNSIGNED | Tidak | — | Nominal yang disetorkan |
-| `payment_method` | ENUM | Tidak | INDEX | `midtrans`, `cash`, `bank_transfer` |
-| `payment_type` | ENUM | Tidak | — | `full` (lunas langsung) / `installment` |
-| `status` | ENUM | Tidak | INDEX | `pending`, `paid`, `failed`, `expired` |
-| `midtrans_order_id` | VARCHAR(100) | Ya | INDEX | Order ID transaksi Midtrans |
-| `midtrans_snap_token`| VARCHAR(255) | Ya | — | Token Snap Popup |
-| `midtrans_payment_type`| VARCHAR(50)| Ya | — | Jenis channel (qris, bank_transfer, dll.) |
-| `evidence_path` | VARCHAR(255) | Ya | — | Path berkas slip/bukti transfer |
-| `paid_at` | TIMESTAMP | Ya | INDEX | Waktu lunas diverifikasi |
-| `notes` | TEXT | Ya | — | Catatan transaksi kasir |
+| `source` | ENUM | Tidak | INDEX | `midtrans`, `manual` |
+| `method` | VARCHAR(50) | Ya | INDEX | `cash`, `bank_transfer`, `qris`, `cstore`, dll. |
+| `status` | ENUM | Tidak | INDEX | `pending`, `success`, `failed`, `expired` |
+| `transaction_reference`| VARCHAR(100)| Ya | INDEX | Referensi ID transaksi / Midtrans Order ID |
+| `snap_token` | VARCHAR(255) | Ya | — | Token Midtrans Snap |
+| `evidence_path` | VARCHAR(255) | Ya | — | Path slip bukti transfer fisik |
+| `notes` | TEXT | Ya | — | Catatan kasir |
+| `paid_at` | TIMESTAMP | Ya | INDEX | Waktu pembayaran terverifikasi |
 | `created_at` | TIMESTAMP | Ya | — | Waktu transaksi |
 | `updated_at` | TIMESTAMP | Ya | — | Waktu pembaruan |
 
 ---
 
-## 3.10 `invoices` & `receipts`
+## 3.9 `invoices` & `receipts`
 Menyimpan arsip dokumen PDF resmi tagihan dan kuitansi pembayaran beserta snapshot historis pejabat bendahara (Immutability).
 
-- **`invoices`**: `id`, `invoice_number` (UNIQUE), `bill_id` (FK), `file_path`, `treasurer_name` (Snapshot Nama), `treasurer_signature_path` (Snapshot TTD), `generated_at`, timestamps.
-- **`receipts`**: `id`, `receipt_number` (UNIQUE), `payment_id` (FK), `file_path`, `treasurer_name` (Snapshot Nama), `treasurer_signature_path` (Snapshot TTD), `generated_at`, timestamps.
+- **`invoices`**: `id`, `bill_id` (FK), `invoice_number` (UNIQUE), `file_path`, `treasurer_name` (Snapshot Nama), `treasurer_signature_path` (Snapshot TTD), timestamps.
+- **`receipts`**: `id`, `payment_id` (FK), `receipt_number` (UNIQUE), `file_path`, `treasurer_name` (Snapshot Nama), `treasurer_signature_path` (Snapshot TTD), timestamps.
 
 ---
 
-## 3.11 `audit_logs` & `whatsapp_logs`
+## 3.10 `audit_logs` & `whatsapp_logs`
 Menyimpan log audit keamanan dan riwayat pengiriman notifikasi WhatsApp.
 
-- **`audit_logs`**: `id`, `user_id` (FK nullable), `actor_name`, `actor_role`, `action`, `auditable_type`, `auditable_id`, `old_values` (JSON), `new_values` (JSON), `ip_address`, `user_agent`, timestamps.
-- **`whatsapp_logs`**: `id`, `recipient_phone`, `recipient_name`, `message_type`, `message_content`, `sent_at`, `status`, timestamps.
+- **`audit_logs`**: `id`, `user_id` (FK nullable), `user_name`, `user_role`, `action`, `auditable_type`, `auditable_id`, `old_values` (JSON), `new_values` (JSON), `ip_address`, `user_agent`, timestamps.
+- **`whatsapp_logs`**: `id`, `student_id` (FK nullable), `parent_id` (FK nullable), `phone_number`, `recipient_name`, `message_type`, `amount`, `message_content`, `status`, `sent_at`, timestamps.

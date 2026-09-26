@@ -22,19 +22,29 @@ Sebelum melakukan perubahan kode pada repository ini, Agent wajib memahami struk
 
 | Layer / Tool | Library / Versi | Aturan Penggunaan |
 |---|---|---|
-| Backend | Laravel 12.x (PHP 8.2+) | Gunakan Eloquent ORM, Form Requests, dan Service Classes |
+| Backend | Laravel 12.x (PHP 8.4+) | Gunakan Eloquent ORM, Form Requests, dan Service Classes |
 | Admin UI | Filament 5.x | Pertahankan konfigurasi panel Filament pada `app/Filament` |
 | Parent Portal | Filament 5 Multi-Panel | Panel Portal Wali Siswa di `/portal` (Tema Emerald) |
 | Excel Engine | PhpSpreadsheet (`ext-zip`) | Wajib format sel eksplisit (Number 0 desimal untuk ID/angka) |
 | PDF Engine | DomPDF | Render via Blade template dengan Base64 image encoding |
 | Linter | Laravel Pint | Jalankan `./vendor/bin/pint` sebelum menyelesaikan task |
-| Test Suite | Pest PHP / PHPUnit | Wajib 100% lulus (**49 Tests, 185 Assertions**) |
+| Test Suite | Pest PHP / PHPUnit | Wajib 100% lulus (**71 Tests, 285 Assertions**) |
 
 ---
 
 # 3. Batasan Domain & Invarian Bisnis yang Tidak Boleh Dilanggar
 
-### 3.1 Pos Pembayaran Resmi (11 Kategori)
+### 3.1 Single Super Admin Account (Singleton Invariant)
+Sistem hanya mengizinkan 1 akun Super Admin (`User::ROLE_SUPER_ADMIN` / `superadmin@pondok.test`).
+Model lifecycle hook (`User::booted`) wajib mencegah pembuatan super admin ke-2, promosi user ke super admin, atau penghapusan akun super admin.
+
+### 3.2 Manajemen Staf Admin (`UserResource`)
+Pengelolaan akun staf admin berada di bawah grup navigasi **Manajemen Pengguna** -> **Kelola Admin**, dan eksklusif hanya dapat diakses oleh Super Admin. Tabel resource ini hanya menampilkan user dengan `role = 'admin'`.
+
+### 3.3 Penanganan Error Ramah Pengguna (`HasFriendlyNotifications`)
+Setiap form Create/Edit wajib mengimplementasikan `HasFriendlyNotifications` untuk menangkap `ValidationException` dan data bentrok/duplikat, lalu menampilkannya sebagai pop-up / toast notifikasi merah berbahasa Indonesia. Dilarang membiarkan raw database error atau error 500 tampil ke pengguna.
+
+### 3.4 Pos Pembayaran Resmi (11 Kategori)
 Agent **dilarang** mengubah, menghapus, atau mengarang nominal pos pembayaran baru di luar 11 pos resmi madrasah:
 1. `SPP`: Rp 75.000 / bulan
 2. `PPDB`: Rp 1.190.000 (Satu kali)
@@ -48,43 +58,43 @@ Agent **dilarang** mengubah, menghapus, atau mengarang nominal pos pembayaran ba
 10. `STUDY_TOUR`: Rp 450.000 (Satu kali)
 11. `AKHIR_TAHUN`: Rp 2.000.000 (Satu kali Kelas 9)
 
-### 3.2 Tidak Ada Fitur Beasiswa (No Scholarship)
+### 3.5 Tidak Ada Fitur Beasiswa (No Scholarship)
 Fitur Beasiswa telah dihapus secara permanen dari sistem. Agent **dilarang** menambahkan kembali model, migrasi, atau UI beasiswa.
 
-### 3.3 Tingkat Kelas & Rombel Dinamis
+### 3.6 Tingkat Kelas & Rombel Dinamis
 - Kelas 7: Rombel `7.1`, `7.2`, `7.3`
 - Kelas 8: Rombel `8.1`, `8.2`, `8.3`, `8.4`
 - Kelas 9: Rombel `9.1`, `9.2`, `9.3`, `9.4`
 - Form dropdown rombel wajib bersifat cascading dari tingkat kelas yang dipilih.
 
-### 3.4 Status Default Siswa
+### 3.7 Status Default Siswa
 Saat data siswa dibuat atau diimpor, status wajib default ke `active` tanpa memaksa pengguna memilih status secara manual.
 
-### 3.5 Transisi Tahun Ajaran Baru
+### 3.8 Transisi Tahun Ajaran Baru
 Pembuatan tahun ajaran baru cukup menerima `start_date` dan `end_date`. Nama tahun ajaran (contoh: `2026/2027`) digenerate otomatis oleh model/service.
 
-### 3.6 Profil & Tanda Tangan Digital Bendahara (Historical Snapshot)
+### 3.9 Profil & Tanda Tangan Digital Bendahara (Historical Snapshot)
 Halaman Profile staf di `/admin/profile` (label "Profile") mengelola `name` dan `signature_path` pada tabel `users`.
 Setelah penyimpanan profil berhasil, sistem mengarahkan admin kembali ke dashboard utama (`/admin`).
-Dokumen PDF (`receipt.blade.php` & `invoice.blade.php`) menggunakan historical snapshot `$receipt->getSignatureBase64()` & `$invoice->getSignatureBase64()` dengan fallback ke bendahara aktif via `User::getActiveTreasurer()->getSignatureBase64()`.
+Dokumen PDF (`receipt.blade.php` & `invoice.blade.php`) menggunakan historical snapshot `$receipt->getSignatureBase64()` & `$invoice->getSignatureBase64()`.
 
-### 3.7 Autentikasi Ganda (Dual Identifier Login)
+### 3.10 Autentikasi Ganda (Dual Identifier Login)
 Login mendukung Email atau Nomor Telepon (`08xx`, `+628xx`, `628xx`) dengan pesan error terisolasi:
 - `"Email tidak ditemukan."` jika format email tidak terdaftar.
 - `"Nomor telepon tidak ditemukan."` jika format nomor telepon tidak terdaftar.
 - `"Password salah."` jika identitas terdaftar namun password tidak cocok.
 
-### 3.8 Import Siswa Massal Native Excel (.xlsx)
+### 3.11 Import Siswa Massal Native Excel (.xlsx)
 - Generator template menghasilkan file asli `.xlsx` menggunakan `PhpOffice\PhpSpreadsheet\Spreadsheet`.
 - NISM, Tingkat Kelas, dan Tahun Masuk diformat sebagai Number (0 Desimal).
 - NISN dan No. Telepon diformat sebagai Teks.
 - Parser import wajib membaca nilai string numerik bersih untuk menghindari notasi ilmiah `e+17`.
 - Penanganan akun orang tua untuk beberapa anak kandung (*siblings*) harus dihubungkan ke 1 entitas parent (`firstOrCreate`).
 
-### 3.9 Manajemen Mutasi Siswa (Siswa Pindah)
+### 3.12 Manajemen Mutasi Siswa (Siswa Pindah)
 - Mutasi siswa (`mutateOut`) mengubah status siswa menjadi `withdrawn`, membatalkan tagihan belum lunas (`unpaid`/`overdue` ➡️ `cancelled`), dan mengunci tagihan/kuitansi yang sudah lunas (`paid`) untuk laporan audit keuangan tahunan.
 - Siswa `withdrawn` dilarang dimasukkan ke penerbitan tagihan SPP bulanan otomatis berikutnya.
-- Log mutasi dan pengaktifan kembali dicatat ke `audit_logs`.
+- Log mutasi dan pengaktifan kembali dicatat ke `audit_logs` secara otomatis melalui `StudentObserver`.
 
 ---
 
@@ -101,5 +111,5 @@ Saat melakukan penambahan atau modifikasi fitur, ikuti urutan kerja:
    ```powershell
    php artisan test
    ```
-   Pastikan seluruh **49 tests** berstatus hijau (PASS).
+   Pastikan seluruh **71 tests** berstatus hijau (PASS).
 5. **Penyelarasan Dokumentasi**: Pastikan seluruh berkas `.md` tetap selaras dengan perubahan kode yang dilakukan.

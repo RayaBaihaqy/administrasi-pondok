@@ -14,7 +14,7 @@ Aplikasi melayani dua kelompok audiens dengan karakteristik antarmuka berbeda na
 1. **Panel Administrasi Internal (`/admin`)**:
    - Berbasis **Filament 5**.
    - Fokus: Kecepatan kerja (*Efficiency*), kemudahan entri data (*Clarity*), dan visualisasi data finansial yang akurat (*Precision*).
-   - Tampilan profesional bernuansa korporat modern dengan aksen *Emerald Green*.
+   - Tampilan profesional bernuansa modern dengan aksen Amber/Emerald dan pemisahan hak akses yang tegas.
 
 2. **Portal Mandiri Wali Santri (`/portal`)**:
    - Berbasis **Filament 5 Multi-Panel (Livewire SPA + Tailwind CSS)**.
@@ -34,7 +34,6 @@ Aplikasi melayani dua kelompok audiens dengan karakteristik antarmuka berbeda na
 - **Surface & Background**: `#F8FAFC` (Tailwind `slate-50`) — Latar belakang aplikasi.
 
 ### 2.2 Status Finansial (Financial Semantic Badges)
-Status tagihan dan transaksi wajib menggunakan standarisasi visual berikut:
 
 | Status Tagihan / Transaksi | Warna Badge | Kode Tailwind | Arti & Penjelasan |
 |---|---|---|---|
@@ -58,62 +57,40 @@ Status tagihan dan transaksi wajib menggunakan standarisasi visual berikut:
 
 ---
 
-# 4. Tata Letak & Navigasi
+# 4. Tata Letak & Navigasi Panel Admin (`/admin`)
 
-### 4.1 Struktur Panel Admin (`/admin`)
-- **Header**: Menampilkan nama madrasah, breadcrumb navigasi, indikator tahun ajaran aktif, notifikasi, dan avatar profil staf.
-- **Header Tabs Navigasi Tabel Siswa**:
-  - `🟢 Siswa Aktif` (Default view dengan counter badge)
-  - `🟠 Siswa Mutasi / Pindah` (Arsip santri pindah)
-  - `🔵 Alumni / Lulus` (Arsip kelulusan)
-  - `Semua Siswa` (Basis data keseluruhan)
-- **Sidebar**: Dikelompokkan ke dalam grup fungsional logis:
-  - **DASHBOARD**: Ringkasan Statistik & Widget Tagihan Jatuh Tempo.
-  - **DATA MASTER**: Siswa (Rombel Dinamis & Aksi Mutasi), Orang Tua / Wali, Tahun Ajaran, Pos Pembayaran (11 Pos Resmi).
-  - **TRANSAKSI & PENAGIHAN**: Tagihan (Bulk Generator & Cicilan), Pembayaran Loket Kasir, Log WhatsApp.
-  - **LAPORAN**: Laporan Pemasukan, Laporan Tunggakan, Laporan Transaksi.
-  - **SISTEM & AUDIT**: Audit Trail, Profil & Tanda Tangan Bendahara (`/admin/profile`).
+### 4.1 Struktur Grup Menu Sidebar
+1. **DASHBOARD**: Ringkasan Statistik Pendapatan, Tagihan Jatuh Tempo, dan Transaksi Terbaru.
+2. **DATA MASTER**: Siswa (Rombel Dinamis & Aksi Mutasi), Orang Tua / Wali.
+3. **MANAJEMEN PENGGUNA (Eksklusif Super Admin)**: Kelola Admin (`/admin/users`).
+4. **KONFIGURASI (Eksklusif Super Admin)**: Jenis Pembayaran (11 Pos Resmi), Tahun Ajaran.
+5. **PEMBAYARAN**: Tagihan (Bulk Generator & Cicilan), Riwayat Transaksi.
+6. **SISTEM**: Log WhatsApp, Audit Log (`/admin/audit-logs` via direct URL).
+7. **LAPORAN**: Laporan Pemasukan, Laporan Tunggakan, Laporan Transaksi.
 
-### 4.2 Halaman Profil Bendahara (`/admin/profile`)
-- **Judul**: Diberi label sederhana dan jelas **"Profile"**.
+### 4.2 Standar Notifikasi Error Ramah Pengguna
+- Setiap validasi gagal atau data duplikat memicu Pop-up / Danger Toast Notification:
+  - Background merah halus dengan border kontras.
+  - Judul: "Gagal Menyimpan Data" atau judul spesifik seperti "Nomor Telepon Duplikat".
+  - Isi: Pesan berbahasa Indonesia yang jelas, menyebutkan kolom yang salah dan solusi yang harus dilakukan.
+  - Zero raw SQL / error 500 leakages.
+
+### 4.3 Halaman Profil Bendahara (`/admin/profile`)
 - **Komponen Form**:
-  1. **Nama Lengkap Bendahara**: Text input untuk nama pejabat resmi (contoh: *Hj. Titi Maryati, S.Pd.I*).
+  1. **Nama Lengkap Bendahara**: Text input nama dan gelar resmi.
   2. **Tanda Tangan Digital**: File upload komponen dengan preview gambar tanda tangan PNG transparan.
-- **Feedback Visual & Auto-Redirect**: Notifikasi toast sukses saat profil disimpan, dengan otomatis mengarahkan admin kembali ke **Dashboard Utama** (`/admin`).
-
-### 4.3 Struktur Portal Wali Santri (`/portal`)
-- **Desain Mobile-First**: Dioptimalkan penuh untuk layar ponsel pintar wali murid (lebar 360px s/d 428px) tanpa horizontal scroll yang mengganggu.
-- **Top Bar Hijau Emerald**: Menampilkan identitas madrasah, salam hangat kepada wali santri, dan tombol logout.
-- **Kartu Ringkasan Finansial**:
-  - Total Tunggakan (dengan nominal besar yang jelas).
-  - Jumlah Anak yang Terdaftar di MTs Miftahul 'Ulum.
-  - Nomor Rekening Resmi BRI Madrasah (`176901000210569`).
-- **Daftar Tagihan Interaktif**: Menampilkan daftar kartu tagihan per anak dengan tombol aksi cepat **"Bayar Online"** dan **"Invoice PDF"**.
-- **Riwayat Pembayaran**: Tab arsip transaksi lunas dilengkapi tombol unduh **"Kuitansi PDF"**.
+- **Auto-Redirect**: Mengarahkan kembali ke **Dashboard Utama** (`/admin`) sesaat setelah simpan berhasil.
 
 ---
 
-# 5. Standar Form & Interaktivitas
+# 5. Tata Letak Portal Wali Santri (`/portal`)
 
-### 5.1 Dynamic Cascading Dropdown (Tingkat Kelas $\rightarrow$ Rombel)
-Pada form input siswa dan filter tagihan:
-- Pilihan **Tingkat Kelas** dipilih terlebih dahulu: `7`, `8`, atau `9`.
-- Dropdown **Rombel** otomatis memuat pilihan yang valid saja:
-  - Kelas 7 $\rightarrow$ `7.1`, `7.2`, `7.3`
-  - Kelas 8 $\rightarrow$ `8.1`, `8.2`, `8.3`, `8.4`
-  - Kelas 9 $\rightarrow$ `9.1`, `9.2`, `9.3`, `9.4`
-- Mencegah kesalahan manusia (*human error*) dalam penempatan rombel siswa.
-
-### 5.2 Form Transisi Tahun Ajaran Baru
-- Cukup menyediakan 2 field tanggal: **Tanggal Mulai** (*Start Date*) dan **Tanggal Selesai** (*End Date*).
-- Nama tahun ajaran (contoh: `2026/2027`) otomatis dikalkulasi oleh sistem, menyederhanakan input pengguna.
-
-### 5.3 Konfirmasi Tindakan Berdampak Finansial (Safety Dialog)
-Setiap tindakan krusial seperti:
-- Pembatalan transaksi kasir,
-- Eksekusi kenaikan kelas massal,
-- Penerbitan tagihan massal,
-wajib menampilkan modal konfirmasi yang menjelaskan dampak tindakan secara transparan sebelum dieksekusi.
+- **Desain Mobile-First**: Dioptimalkan penuh untuk layar ponsel pintar wali murid (lebar 360px s/d 428px).
+- **Top Bar Emerald Green**: Identitas madrasah, salam hangat kepada wali santri, dan opsi profile/logout.
+- **Menu Utama**:
+  1. **Tagihan Saya (Dashboard)**: Kartu ringkasan tunggakan, tabel interaktif tagihan, tombol "Bayar Online" Midtrans Snap, dan "Invoice PDF".
+  2. **Anak Saya**: Profil lengkap santri (NISN, NISM, Kelas, Rombel).
+  3. **Riwayat Pembayaran**: Arsip seluruh transaksi lunas dilengkapi tombol unduh "Bukti Bayar PDF".
 
 ---
 
@@ -127,7 +104,7 @@ Dokumen PDF yang dihasilkan oleh sistem (Invoice dan Kuitansi) dirancang dengan 
 - **Tanda Tangan & Cap Stempel**:
   - Posisi kanan bawah dokumen.
   - Cap Stempel Digital Bulat MTs Miftahul 'Ulum.
-  - Tanda Tangan Digital Bendahara Aktif (Base64 Render).
+  - Tanda Tangan Digital Bendahara (Historical Snapshot Base64).
   - Nama Lengkap Pejabat Bendahara Terdaftar.
 - **Rincian Finansial**:
   - Tabel rincian pos biaya, periode tagihan, tanggal jatuh tempo / tanggal pembayaran.

@@ -13,17 +13,18 @@
 |---|---|
 | Nama Produk | Sistem Administrasi & Pembayaran MTs. Miftahul 'Ulum |
 | Dokumen | Product Requirements Document (PRD) |
-| Versi | 2.0 — Production Ready |
+| Versi | 2.5 — Production Ready & Fully Audited |
 | Status | ✅ Confirmed Specification |
 | Institusi | MTs. Miftahul 'Ulum / Yayasan Perguruan Islam Miftahul 'Ulum |
-| Target Pengguna | Super Admin (Kepala Yayasan / Kepala Bendahara), Admin (Kasir / Staf Keuangan), Orang Tua / Wali Santri |
-| Backend | Laravel 12 (PHP 8.2+) |
+| Target Pengguna | Super Admin (Kepala Yayasan / Bendahara Utama), Admin (Kasir / Staf Keuangan), Orang Tua / Wali Santri |
+| Backend | Laravel 12 (PHP 8.4+) |
 | Admin Panel | Filament 5 (`/admin`) |
 | Parent Portal | Filament 5 Multi-Panel (`/portal` - Emerald Green Theme) |
 | Payment Gateway | Midtrans (Snap & Webhook Callback) |
 | Spreadsheet Engine | PhpSpreadsheet (Native `.xlsx`) |
 | PDF Engine | DomPDF |
 | Database | MySQL |
+| Test Suite | PHPUnit (71 Tests, 285 Assertions — 100% PASS) |
 
 ---
 
@@ -32,8 +33,8 @@
 Sistem Administrasi Pembayaran MTs. Miftahul 'Ulum adalah aplikasi web terpadu untuk mendigitalisasi dan mengotomatisasi tata kelola keuangan madrasah. Sistem ini menggantikan pencatatan manual berbasis spreadsheet Excel menjadi sistem transaksi terpusat, aman, dan dapat diaudit.
 
 Sistem dirancang untuk tiga kelompok pengguna utama:
-1. **Super Admin (Kepala Yayasan / Kepala Bendahara)**: Memantau performa keuangan secara eksekutif, mengelola master tarif 11 pos biaya, konfigurasi tahun ajaran & kenaikan kelas, mengaudit aktivitas sistem, serta memperbarui nama dan tanda tangan digital bendahara pada dokumen resmi.
-2. **Admin (Operator / Kasir Bendahara)**: Menjalankan operasional keuangan harian, penerbitan tagihan satuan & massal, penerimaan loket kasir tunai/manual, import data siswa via Excel `.xlsx`, dan pengiriman notifikasi WhatsApp 1-klik (`wa.me`).
+1. **Super Admin (Kepala Yayasan / Kepala Bendahara)**: Memantau performa keuangan secara eksekutif, mengelola akun staf admin (`/admin/users`), mengelola master tarif 11 pos biaya, konfigurasi tahun ajaran & kenaikan kelas, mengaudit aktivitas sistem (`/admin/audit-logs`), serta memperbarui nama dan tanda tangan digital bendahara pada dokumen resmi.
+2. **Admin (Operator / Kasir Bendahara)**: Menjalankan operasional keuangan harian, pengelolaan siswa & mutasi keluar, penerbitan tagihan satuan & massal, penerimaan loket kasir tunai/manual, import data siswa via Excel `.xlsx`, dan pengiriman notifikasi WhatsApp 1-klik (`wa.me`).
 3. **Orang Tua / Wali Siswa**: Mengakses Portal Mandiri (`/portal`) dengan autentikasi ganda (Email / No. HP), memantau kewajiban pendidikan anak kandung, membayar instan via Midtrans Snap (QRIS, Virtual Account, Gerai Retail), serta mengunduh Invoice dan Kuitansi sah berstempel & bertanda tangan.
 
 ---
@@ -44,20 +45,22 @@ Sistem dirancang untuk tiga kelompok pengguna utama:
 Sistem menerapkan role-based access control (RBAC) dengan 3 peran:
 
 ```text
-Super Admin (super_admin)
-  │── Memiliki seluruh wewenang Admin
+Super Admin (super_admin) [SINGLETON MASTER ACCOUNT]
+  │── Manajemen Akun Staf Admin (Kelola Admin /admin/users)
   │── Mengelola Master Pos Pembayaran & Matriks Tarif 11 Kategori
   │── Mengelola Master Tahun Ajaran & Eksekusi Kenaikan Kelas Massal
-  │── Mengakses Audit Trail Lengkap (Immutable Log)
-  └── Mengelola Profil & Unggah Tanda Tangan Digital Bendahara (/admin/profile)
+  │── Mengakses Audit Trail Lengkap (Immutable Observer Logs di /admin/audit-logs)
+  │── Mengelola Profil & Unggah Tanda Tangan Digital Bendahara (/admin/profile)
+  └── Memiliki seluruh wewenang operasional Admin
 
 Admin (admin)
   │── Manajemen Data Siswa (Tingkat 7, 8, 9 & Rombel Dinamis)
+  │── Mutasi Siswa Pindah & Pembatalan Otomatis Tagihan Belum Lunas
   │── Import Massal Siswa dari Excel Asli (.xlsx)
   │── Manajemen Data Wali Murid & Auto-provisioning Akun
   │── Penerbitan Tagihan (Individual, Massal, dan Skema Cicilan)
   │── Loket Pembayaran Kasir Tunai / Manual & Upload Bukti Bayar
-  │── Pengiriman Notifikasi WhatsApp 1-Klik (wa.me)
+  │── Pengiriman Notifikasi WhatsApp 1-Klik (wa.me) & Monitoring Log WhatsApp
   └── Unduh & Cetak Laporan Keuangan (Pemasukan, Tunggakan, Riwayat Transaksi)
 
 Orang Tua / Wali (parent)
@@ -75,6 +78,11 @@ Form login pada Admin Panel (`/admin/login`) dan Portal Wali (`/portal/login`) m
   - Jika input berupa email dan tidak terdaftar: `"Email tidak ditemukan."`
   - Jika input berupa nomor telepon dan tidak terdaftar: `"Nomor telepon tidak ditemukan."`
   - Jika identitas terdaftar namun kata sandi tidak cocok: `"Password salah."`
+
+### 3.3 Sistem Notifikasi Error Ramah Pengguna
+- Seluruh form Create & Edit dilengkapi penanganan error interaktif yang menangkap kesalahan input (duplikasi nomor telepon, NISN, email, atau kesalahan format).
+- Menampilkan pesan notifikasi pop-up berwarna merah (*danger toast*) dalam bahasa Indonesia yang mudah dipahami.
+- Tidak pernah membocorkan error teknis SQL atau halaman 500 kepada pengguna.
 
 ---
 
@@ -125,7 +133,6 @@ Struktur madrasah terdiri atas 3 jenjang kelas MTs dengan pembagian rombel khusu
 - Format kolom template:
   - **NISM, Tingkat Kelas, Tahun Masuk**: Format Number (0 Desimal) untuk mencegah notasi ilmiah `e+17`.
   - **NISN, No. Telepon**: Format Text.
-  - Header kolom yang bersih: `NISN`, `NISM`, `Nama Lengkap`, `Jenis Kelamin (L/P)`, `Tingkat Kelas`, `Rombel`, `Tahun Masuk`, `Nama Orang Tua / Wali`, `No. WhatsApp / HP Orang Tua`, `Email Orang Tua`, `Alamat`.
 - Otomasi akun & Multi-anak (*Siblings*): Sistem otomatis membuat akun login orang tua berbasis Nomor HP / Email. Jika orang tua memiliki lebih dari satu anak di madrasah, seluruh anak otomatis ditautkan ke akun orang tua yang sama (*single parent portal*).
 
 ### 5.4 Transisi Tahun Ajaran Baru & Kenaikan Kelas Massal
@@ -145,12 +152,9 @@ Struktur madrasah terdiri atas 3 jenjang kelas MTs dengan pembagian rombel khusu
   1. **Nama Bendahara**: Nama lengkap dan gelar pejabat bendahara aktif.
   2. **Tanda Tangan Digital**: Upload berkas gambar tanda tangan (format PNG/JPG transparan).
 - **Auto-Redirect ke Dashboard**: Setelah proses penyimpanan profil bendahara berhasil, sistem secara otomatis mengarahkan admin kembali ke **Dashboard Utama** (`/admin`).
-- **Dampak Finansial & Dokumen (Historical Snapshot & Document Immutability)**:
-  - Nama dan tanda tangan digital ini secara otomatis di-snapshot ke record Invoice dan Kuitansi saat dokumen pertama kali diterbitkan:
-    - **Kuitansi Pembayaran Sah** (`/docs/receipt/{no}`)
-    - **Invoice Tagihan Resmi** (`/docs/invoice/{no}`)
-  - **Integritas Arsip Historis**: Dokumen yang telah terbit di masa jabatan bendahara sebelumnya (misal: "Bu Putri") akan **secara permanen tetap mencantumkan nama dan tanda tangan Bu Putri**.
-  - Saat terjadi pergantian bendahara aktif (misal: "Pak Putra"), dokumen-dokumen baru yang diterbitkan setelah pergantian tersebut akan otomatis menggunakan nama dan tanda tangan Pak Putra.
+- **Historical Snapshotting (Document Immutability)**:
+  - Nama dan tanda tangan digital di-snapshot permanen ke record Invoice dan Kuitansi saat dokumen pertama kali diterbitkan.
+  - Dokumen era pejabat terdahulu tidak akan berubah saat terjadi pergantian bendahara baru.
 
 ---
 
@@ -167,12 +171,6 @@ Struktur madrasah terdiri atas 3 jenjang kelas MTs dengan pembagian rombel khusu
 - Tagihan dengan nominal besar (seperti Pendaftaran Siswa Baru Rp 1.190.000 atau Akhir Tahun Rp 2.000.000) dapat dipecah menjadi beberapa angsuran bulanan (tenor 2 s/d 36 bulan).
 - Perhitungan presisi dengan *rounding adjustment* pada angsuran terakhir.
 
-### 7.3 Status Tagihan
-- 🟡 **Belum Bayar (`unpaid`)**: Belum lunas dan belum melewati jatuh tempo.
-- 🟢 **Lunas (`paid`)**: Sisa tagihan telah Rp 0.
-- 🔴 **Terlambat (`overdue`)**: Melewati jatuh tempo dan masih memiliki sisa tunggakan.
-- ⚪ **Dibatalkan (`cancelled`)**: Tagihan dibatalkan secara sistem (misal: akibat siswa mutasi keluar/pindah).
-
 ---
 
 # 8. Kanal Pembayaran & Kuitansi Sah
@@ -187,29 +185,26 @@ Struktur madrasah terdiri atas 3 jenjang kelas MTs dengan pembagian rombel khusu
 - Validasi *anti-overpayment* dan fitur unggah bukti bayar fisik.
 
 ### 8.3 Kuitansi & Invoice PDF Resmi
-- Format nomor kuitansi unik: `PAY-MAN-{NIS}-{YYYYMMDD}-{RAND}` atau `PAY-MID-{NIS}-{YYYYMMDD}-{RAND}`.
-- Format nomor invoice: `INV-{NIS}-{YYYYMM}-{RAND}`.
+- Format nomor kuitansi unik: `PAY-MANUAL-{NIS}-{KODE}-{INDEX}` atau `PAY-ONLINE-{NIS}-{KODE}-{INDEX}`.
+- Format nomor invoice: `INV-{NIS}-{PERIODE}-{RAND}`.
 - Memuat kop surat resmi yayasan, stempel bulat digital madrasah, tanda tangan digital bendahara (historical snapshot), dan nominal terbilang bahasa Indonesia.
 
 ---
 
 # 9. Notifikasi WhatsApp 1-Klik (`wa.me`)
 
-- Tombol **"Kirim WA"** pada panel admin langsung menyusun format pesan resmi institusi:
-  - Salam pembuka islami.
-  - Rincian identitas santri & rincian nominal tagihan / pembayaran.
-  - Batas waktu jatuh tempo & instruksi pembayaran.
-  - Tautan langsung unduh dokumen Invoice / Kuitansi PDF publik tanpa perlu login.
+- Tombol **"Kirim WA"** pada panel admin langsung menyusun format pesan resmi institusi via `https://wa.me/` bebas biaya gateway.
 - Normalisasi nomor handphone otomatis ke format internasional `628xx`.
+- Seluruh riwayat pengiriman notifikasi tercatat di menu **Log WhatsApp** (`/admin/whats-app-logs`).
 
 ---
 
 # 10. Audit Trail & Laporan Keuangan
 
-### 10.1 Audit Trail (Eksklusif Super Admin)
-- Mencatat seluruh operasi CRUD finansial & administratif (termasuk mutasi siswa dan pembatalan tagihan).
-- Mencatat pelaku (*actor*), IP address, User Agent, waktu kejadian, serta perbandingan nilai sebelum (*old*) dan sesudah (*new*).
-- Bersifat permanen (*immutable*).
+### 10.1 Audit Trail Otomatis via Model Observers (Eksklusif Super Admin)
+- Seluruh mutasi model dicatat otomatis melalui Observers (`UserObserver`, `StudentObserver`, `ParentProfileObserver`, `BillObserver`, `PaymentObserver`, `AcademicYearObserver`, `PaymentTypeObserver`).
+- Mencatat pelaku (*actor*), role, IP address, User Agent, waktu kejadian, serta perbandingan nilai sebelum (*old*) dan sesudah (*new*).
+- Dapat diakses langsung oleh Super Admin di `/admin/audit-logs`.
 
 ### 10.2 Laporan Keuangan Eksekutif
 - **Laporan Pemasukan**: Rekapitulasi per pos pembayaran dan per metode bayar.
@@ -221,5 +216,5 @@ Struktur madrasah terdiri atas 3 jenjang kelas MTs dengan pembagian rombel khusu
 
 # 11. Kualitas & Pengujian Otomatis
 
-- Seluruh alur bisnis dilindungi oleh rangkaian uji otomatis (*Automated Test Suite*): **49 Tests, 185 Assertions Passing 100%**.
+- Seluruh alur bisnis dilindungi oleh rangkaian uji otomatis (*Automated Test Suite*): **71 Tests, 285 Assertions Passing 100%**.
 - Standar penulisan kode terstandarisasi dengan **Laravel Pint**.

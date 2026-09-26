@@ -1,6 +1,6 @@
 # 🕌 Sistem Informasi Administrasi & Pembayaran MTs. Miftahul 'Ulum
 
-Sistem Informasi Manajemen Penagihan, Pembayaran Online (Midtrans) & Kasir Offline, Rekapitulasi Laporan Keuangan, Invoice & Kuitansi PDF Resmi Berstempel, Integrasi Notifikasi WhatsApp, serta Portal Wali Siswa terpadu untuk **Yayasan Perguruan Islam Miftahul 'Ulum (Jenjang MTs. Miftahul 'Ulum)**.
+Sistem Informasi Manajemen Penagihan, Pembayaran Online (Midtrans) & Kasir Offline, Rekapitulasi Laporan Keuangan, Invoice & Kuitansi PDF Resmi Berstempel, Integrasi Notifikasi WhatsApp, Kelola Admin, Audit Trail Otomatis, serta Portal Wali Siswa terpadu untuk **Yayasan Perguruan Islam Miftahul 'Ulum (Jenjang MTs. Miftahul 'Ulum)**.
 
 Sistem ini dibangun dengan arsitektur **Modular Monolith Enterprise** menggunakan **Laravel 12**, **Filament v5**, **Livewire 3**, **Midtrans Payment Gateway API**, **DomPDF Engine**, dan **PhpSpreadsheet**.
 
@@ -14,7 +14,7 @@ Sistem ini dibangun dengan arsitektur **Modular Monolith Enterprise** menggunaka
 5. [Sistem Pembayaran Cicilan (Sistem A)](#-sistem-pembayaran-cicilan-sistem-a)
 6. [Standar Dokumen Invoice & Kuitansi PDF](#-standar-dokumen-invoice--kuitansi-pdf)
 7. [Format Penomoran Dokumen & File](#-format-penomoran-dokumen--file)
-8. [Akses Panel & Kredensial Login Demo](#-akses-panel--kredensial-login-demo)
+8. [Akses Panel, Hak Akses & Kredensial Login](#-akses-panel-hak-akses--kredensial-login)
 9. [Struktur Direktori & Penjelasan Lengkap File](#-struktur-direktori--penjelasan-lengkap-file)
 10. [Panduan Instalasi & Pengoperasian](#-panduan-instalasi--pengoperasian)
 11. [Perintah Artisan (CLI Commands)](#-perintah-artisan-cli-commands)
@@ -34,7 +34,7 @@ Sistem ini dibangun dengan arsitektur **Modular Monolith Enterprise** menggunaka
 | **PDF Document** | DomPDF | `^3.1` | Generasi Invoice, Kuitansi Berstempel & Rekapitulasi PDF |
 | **Spreadsheet Engine**| PhpSpreadsheet | `^5.9` | Generator Template Native `.xlsx` & Universal Spreadsheet Parser |
 | **Database** | MySQL | `>= 8.0` | Relational Database Storage dengan Indexing Optimal |
-| **Testing Suite** | PHPUnit | `^11.5` | Automated Unit & Feature Testing (**49/49 Passing, 185 assertions — 100%**) |
+| **Testing Suite** | PHPUnit | `^11.5` | Automated Unit & Feature Testing (**71/71 Passing, 285 assertions — 100%**) |
 
 ---
 
@@ -63,49 +63,71 @@ Seluruh identitas lembaga dan informasi rekening pembayaran terpusat pada file k
   * 🔴 *"Nomor telepon tidak ditemukan."* jika nomor HP belum terdaftar.
   * 🔴 *"Password salah."* jika kata sandi keliru.
 * **Admin Staff Panel (`/admin`)**:
-  * **Super Admin (*Kepala Yayasan / Bendahara Utama*)**: Log Audit, Kenaikan Kelas Massal, Reset Tahun Ajaran, Konfigurasi Tarif, dan Pengaturan Profil/TTD Bendahara.
+  * **Super Admin (*Kepala Yayasan / Bendahara Utama*)**: Manajemen Akun Admin Staff, Log Audit Sistem, Kenaikan Kelas Massal, Reset Tahun Ajaran, Konfigurasi Tarif, dan Pengaturan Profil/TTD Bendahara.
   * **Admin (*Operator Keuangan / Kasir*)**: Pengelolaan Siswa, Mutasi Siswa Pindah, Import Excel `.xlsx`, Penerbitan Tagihan, Kasir Tunai, Laporan Keuangan, dan Pengiriman WhatsApp.
 * **Parent Portal Panel (`/portal`)**:
   * Dirancang khusus untuk **Wali Santri** dengan tema Emerald Green yang bersih dan responsif.
   * 3 Menu Utama: **Dashboard** (Tunggakan & Bayar Online), **Anak Saya** (Profil Santri & Multi-anak Sibling), dan **Riwayat Pembayaran** (Arsip Kuitansi PDF).
 
-### 2. Pengaturan Profil Bendahara & Upload Tanda Tangan Digital (`/admin/profile`)
-* Halaman **Profile** di pojok kanan atas untuk Super Admin/Bendahara:
+### 2. Arsitektur Single Super Admin & Manajemen Akun Admin Staff
+* **Arsitektur Singleton Super Admin**:
+  * Sistem mengunci akun Super Admin utama (`superadmin@pondok.test`).
+  * Guard model level (`User::booted`) secara mutlak menolak pembuatan akun Super Admin kedua, menolak promosi role ke `super_admin`, dan menolak penghapusan akun Super Admin utama.
+* **Menu Kelola Admin (`/admin/users`)**:
+  * Disediakan khusus untuk Super Admin pada grup navigasi **Manajemen Pengguna** -> **Kelola Admin**.
+  * Super Admin dapat menambahkan akun staf Admin baru, mengubah profil, mereset password admin dengan modal interaktif, serta menonaktifkan/menghapus staf admin.
+  * Tabel hanya menampilkan staf admin (akun super admin otomatis di-filter keluar agar tidak dapat diubah/dihapus oleh siapapun).
+
+### 3. Sistem Notifikasi Error Ramah Pengguna (Zero Raw Error Leak)
+* **Trait `HasFriendlyNotifications` & Localized Validation**:
+  * Semua halaman Create & Edit di seluruh resource mengimplementasikan penanganan pesan kesalahan interaktif berbahasa Indonesia yang bersahabat.
+  * Setiap kesalahan input (misalnya nomor HP duplikat, NISN ganda, email kembar, format tanggal tidak valid) ditangkap dan ditampilkan via **Pop-up / Danger Toast Notification** yang jelas dan mendalam.
+  * Mencegah total kebocoran pesan database mentah, SQL exception, atau kode status 500 ke hadapan pengguna akhir.
+
+### 4. Audit Trail Otomatis Komprehensif via Model Observers
+* **Coverage Penuh Seluruh Entitas Finansial & Master Data**:
+  * Model Observers (`UserObserver`, `StudentObserver`, `ParentProfileObserver`, `BillObserver`, `PaymentObserver`, `AcademicYearObserver`, `PaymentTypeObserver`) otomatis merekam setiap penambahan, pengubahan, mutasi, pembatalan, dan penghapusan data.
+  * Mencatat waktu kejadian presisi, nama aktor, role, alamat IP, user agent, data sebelum perubahan (*old values*), dan data sesudah perubahan (*new values*).
+  * Bersifat *immutable* (tidak dapat dimanipulasi atau dihapus).
+  * Menu Audit Log tersembunyi dari sidebar agar antarmuka tetap bersih, namun dapat diakses langsung oleh Super Admin melalui URL `/admin/audit-logs` (didukung auto-redirect dari `/admin/audit-log`).
+
+### 5. Pengaturan Profil Bendahara & Upload Tanda Tangan Digital (`/admin/profile`)
+* Halaman **Profile** untuk Super Admin/Bendahara:
   * **Nama Bendahara**: Nama lengkap & gelar resmi bendahara.
   * **Upload Tanda Tangan (TTD)**: Unggah file foto/scan tanda tangan (PNG/JPG transparan).
   * **Auto-Redirect**: Setelah data profil dan TTD disimpan, sistem otomatis mengarahkan admin kembali ke **Dashboard Utama**.
 * **Historical Snapshot & Immutabilitas Dokumen**:
   * Setiap Invoice & Kuitansi mengunci (*snapshot*) nama dan tanda tangan bendahara yang aktif pada saat dokumen diterbitkan.
-  * Dokumen masa lalu yang terbit pada era pejabat bendahara terdahulu (misal: "Bu Putri") **tetap permanen bertanda tangan Bu Putri**.
-  * Dokumen baru yang terbit setelah pergantian bendahara baru (misal: "Pak Putra") secara otomatis mengunci nama & tanda tangan Pak Putra.
+  * Dokumen masa lalu yang terbit pada era pejabat bendahara terdahulu tetap permanen dengan tanda tangan pejabat bersangkutan.
+  * Dokumen baru yang terbit setelah pergantian bendahara baru secara otomatis mengunci nama & tanda tangan bendahara baru.
 * **Integrasi PDF Instan**: Render tanda tangan berbasis Base64 memastikan file PDF kuitansi dan tagihan ter-generate sangat cepat tanpa kendala akses path storage.
 
-### 3. Manajemen Mutasi Siswa (Siswa Pindah) & Pembatalan Tagihan Otomatis
+### 6. Manajemen Mutasi Siswa (Siswa Pindah) & Pembatalan Tagihan Otomatis
 * **Aksi 1-Klik `[ Mutasi / Pindah ]`**: Mengubah status siswa aktif menjadi **Keluar / Pindah (`withdrawn`)** dengan modal konfirmasi interaktif.
 * **Auto-Cancel Tagihan Menggantung**: Tagihan yang berstatus `unpaid` atau `overdue` otomatis dibatalkan (`cancelled`) dengan catatan alasan mutasi, sehingga piutang madrasah langsung bersih.
 * **Integritas Pembukuan Terjaga**: Riwayat tagihan dan kuitansi pembayaran yang sudah lunas (`paid`/`success`) tetap tersimpan utuh untuk kebutuhan rekapitulasi keuangan tahunan akuntan yayasan.
 * **Header Tabs Filter**: Halaman Siswa dilengkapi tab `🟢 Siswa Aktif`, `🟠 Siswa Mutasi / Pindah`, `🔵 Alumni / Lulus`, dan `Semua Siswa` dengan badge jumlah siswa dinamis.
 
-### 4. Pemilihan Rombel Dinamis & Data Real Siswa (239 Siswa Nyata)
+### 7. Pemilihan Rombel Dinamis & Data Real Siswa (239 Siswa Nyata)
 * Pilihan rombel kelas terkunci sampai tingkat kelas dipilih:
   * **Kelas 7**: Rombel `7.1`, `7.2`, `7.3` (61 Siswa)
   * **Kelas 8**: Rombel `8.1`, `8.2`, `8.3`, `8.4` (73 Siswa)
   * **Kelas 9**: Rombel `9.1`, `9.2`, `9.3`, `9.4` (105 Siswa)
 * Terintegrasi dengan **Data Nyata Orang Tua** (nama asli, nomor WhatsApp asli, email asli) serta mendukung pengelompokan saudara kandung (*siblings*) pada satu akun portal wali.
 
-### 5. Transisi Tahun Ajaran Baru & Auto-Generate Nama
+### 8. Transisi Tahun Ajaran Baru & Kenaikan Kelas Otomatis
 * Modal transisi tahun ajaran hanya membutuhkan **Tanggal Mulai** dan **Tanggal Selesai**.
 * Nama tahun ajaran baru ter-generate otomatis dari tahun kedua tanggal tersebut (misal `2026/2027`).
-* Dilengkapi *repeater* dinamis siswa tinggal kelas dengan pencarian terkelompok per kelas.
+* Eksekusi kenaikan kelas massal: Kelas 7 naik ke Kelas 8, Kelas 8 naik ke Kelas 9, Kelas 9 otomatis lulus (*graduated*). Dilengkapi *repeater* dinamis siswa tinggal kelas dengan pencarian terkelompok per kelas.
 
-### 6. Download Template & Import Data Siswa Massal Native Excel (`.xlsx`)
+### 9. Download Template & Import Data Siswa Massal Native Excel (`.xlsx`)
 * Tombol **`Download Template`**: Menghasilkan file native **Excel Workbook (`.xlsx`)** dengan format kolom **`Number` (desimal 0)** untuk NISM, Tingkat Kelas, Tahun Masuk, serta format **`Text`** untuk NISN & No. HP agar angka `0` tidak hilang.
 * **Sanitasi Data Anti-`e+17`**: Parser import secara otomatis membersihkan notasi ilmiah dan formula Excel, memastikan data masuk utuh dan bersih.
 
-### 7. Otomasi WhatsApp & 1-Klik Kirim Pesan (`wa.me`)
+### 10. Otomasi WhatsApp & Riwayat Log WhatsApp (`wa.me`)
 * **100% Bebas Biaya Gateway**: Menggunakan URL generator `https://wa.me/` yang langsung membuka aplikasi WhatsApp / WhatsApp Web.
 * Pesan notifikasi melampirkan link unduh dokumen PDF resmi berstempel (`/docs/invoice/{no}` dan `/docs/receipt/{no}`).
-* Normalisasi nomor telepon otomatis (`08xx`, `+628xx` ➡️ `628xx`).
+* Semua aktivitas pengiriman tagihan baru, pengingat jatuh tempo, dan bukti pembayaran sukses otomatis tercatat di menu **Log WhatsApp** (`/admin/whats-app-logs`).
 
 ---
 
@@ -156,7 +178,7 @@ Sistem menerapkan arsitektur **Sistem A (*Single Master Bill with Incremental Pa
    - Identitas siswa (NISN, Nama, Kelas, Rombel).
    - Rincian item tagihan dan petunjuk transfer Bank BRI.
 3. **Tanda Tangan & Cap Digital**:
-   - Tanda tangan digital dinamis dari akun bendahara aktif.
+   - Tanda tangan digital dinamis dari akun bendahara aktif (historical snapshot).
    - Cap stempel basah digital resmi madrasah.
    - Nama terang bendahara tercetak jelas di bawah tanda tangan.
 
@@ -173,13 +195,13 @@ Sistem menerapkan arsitektur **Sistem A (*Single Master Bill with Incremental Pa
 
 ---
 
-## 🔑 Akses Panel & Kredensial Login Demo
+## 🔑 Akses Panel, Hak Akses & Kredensial Login
 
 | Panel | URL Akses | Role Pengguna | Email Login | No. Telepon Login | Password | Hak Akses Utama |
 |---|---|---|---|---|---|---|
-| **Admin Staff** | `http://127.0.0.1:8000/admin` | **Super Admin** | `superadmin@pondok.test` | `081299990001` | `password` | Akses Penuh: Audit Log, Reset TA, Tarif, Profil & TTD |
-| **Admin Staff** | `http://127.0.0.1:8000/admin` | **Admin Keuangan** | `admin@pondok.test` | `081299990002` | `password` | Import Siswa, Kelola Tagihan, Kasir, Laporan, WA |
-| **Parent Portal** | `http://127.0.0.1:8000/portal` | **Wali Siswa** | `wali_3144228827@parent.test` | `081244228827` | `password` | Dashboard Tunggakan, Bayar Midtrans, Kuitansi & Invoice |
+| **Admin Staff** | `http://127.0.0.1:8000/admin` | **Super Admin** | `superadmin@pondok.test` | `081299990001` | `password` | Akses Penuh: Kelola Admin, Audit Log, Reset TA, Tarif, Profil & TTD |
+| **Admin Staff** | `http://127.0.0.1:8000/admin` | **Admin Keuangan** | `admin@pondok.test` | `081299990002` | `password` | Operasional: Siswa, Tagihan, Kasir, Laporan, Log WA |
+| **Parent Portal** | `http://127.0.0.1:8000/portal` | **Wali Siswa** | `wali_3144228827@parent.test` | `081244228827` | `password` | Dashboard Mandiri: Tagihan Anak, Bayar Midtrans, Kuitansi & Invoice |
 | **Parent Portal** | `http://127.0.0.1:8000/portal` | **Wali Siswa** | `wali_3144228828@parent.test` | `081244228828` | `password` | Akun Wali Siswa Demo 2 |
 
 ---
@@ -195,16 +217,19 @@ administrasi-pondok/
 │   │   ├── Pages/Auth/EditProfile.php           # Custom Edit Profile (Nama Bendahara & Upload TTD)
 │   │   ├── Pages/                               # Halaman Dashboard, RevenueReport, OutstandingReport, PaymentReport
 │   │   ├── Parent/                              # Panel Portal Khusus Orang Tua / Wali Siswa (/portal)
-│   │   └── Resources/                           # Resources Panel Admin (Siswa, Tagihan, Pembayaran, Tahun Ajaran, dll)
+│   │   ├── Resources/                           # Resources Panel Admin (UserResource, StudentResource, BillResource, dll.)
+│   │   └── Traits/HasFriendlyNotifications.php  # Trait Global Intercept Error & Indonesian Toast Notification
 │   ├── Http/Controllers/                       # DocumentController (PDF Publik) & PaymentController (Webhook Midtrans)
 │   ├── Models/                                  # 17 Eloquent Models (User, Student, Bill, Payment, dll)
+│   ├── Observers/                               # 7 Model Observers untuk Pencatatan Audit Trail Otomatis
 │   ├── Providers/Filament/                      # AdminPanelProvider & ParentPanelProvider
-│   └── Services/                                # BillingService, PaymentService, StudentImportService, DocumentService, TransitionService, WhatsAppAutomationService
+│   └── Services/                                # BillingService, PaymentService, StudentImportService, DocumentService, WhatsAppAutomationService
 ├── database/
 │   ├── migrations/                              # 26 Database Migrations
 │   └── seeders/                                 # DatabaseSeeder, UserSeeder, AcademicYearSeeder, PaymentTypeSeeder, BillSeeder
+├── lang/id/                                     # Terjemahan Bahasa Indonesia & Pesan Validasi
 ├── resources/views/pdf/                         # Template DomPDF Invoice, Receipt & Laporan
-└── tests/                                       # 49 Automated Unit & Feature Tests
+└── tests/                                       # 71 Automated Unit & Feature Tests
 ```
 
 ---
@@ -240,4 +265,4 @@ Jalankan seluruh test suite dengan perintah:
 ```bash
 php artisan test
 ```
-**Status: 49 tests passed, 185 assertions (100% PASS)**
+**Status: 71 tests passed, 285 assertions (100% PASS)**

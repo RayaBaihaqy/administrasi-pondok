@@ -10,7 +10,7 @@
 
 ## 👑 Bagian 1: Fitur Role Super Admin (Kepala Yayasan / Kepala Bendahara)
 
-Super Admin memiliki hak akses tertinggi di sistem dengan wewenang mengelola konfigurasi fundamental, tarif, kebijakan akademik, audit keamanan, profil & tanda tangan bendahara, serta seluruh fitur operasional admin.
+Super Admin memiliki hak akses tertinggi di sistem dengan wewenang mengelola akun staf admin, konfigurasi fundamental, tarif, kebijakan akademik, audit keamanan, profil & tanda tangan bendahara, serta seluruh fitur operasional admin.
 
 1. **Dashboard Eksekutif & Analitik Keuangan Real-Time**
    * Monitoring total pendapatan madrasah (bulan ini, tahun ini, dan per rentang waktu).
@@ -19,33 +19,53 @@ Super Admin memiliki hak akses tertinggi di sistem dengan wewenang mengelola kon
    * Diagram komposisi pendapatan per pos pembayaran dan per metode bayar (Tunai vs Gateway Midtrans).
    * Tabel pantauan 5 transaksi pembayaran terbaru dan daftar tagihan mendesak.
 
-2. **Manajemen Profil & Tanda Tangan Digital Bendahara (Halaman Profile `/admin/profile`)**
+2. **Manajemen Akun Staf Admin (Menu "Kelola Admin" `/admin/users`)**
+   * Super Admin dapat mengelola akun staf operasional (**Admin**) pada grup navigasi **Manajemen Pengguna** -> **Kelola Admin**.
+   * Pendaftaran akun staf admin baru dengan nama lengkap, email login unik, nomor WhatsApp unik, dan password akun.
+   * Fitur **Reset Password Admin** dengan modal interaktif yang cepat dan aman.
+   * Pengubahan data staf admin dan penghapusan akun admin dengan proteksi terhadap akun yang sedang login.
+   * Tabel daftar staf difilter secara ketat hanya menampilkan akun dengan role `admin` (akun Super Admin dilindungi dan tidak dimunculkan di tabel).
+
+3. **Arsitektur Keamanan Single Super Admin (Singleton Master Account)**
+   * Sistem mengunci kepemilikan akun Super Admin tunggal (`superadmin@pondok.test`).
+   * Proteksi tingkat Eloquent model (`User::booted`) yang secara mutlak menolak:
+     - Pembuatan akun Super Admin kedua di dalam sistem.
+     - Promosi/perubahan role pengguna lain menjadi Super Admin.
+     - Penghapusan akun Super Admin utama.
+
+4. **Sistem Notifikasi Error Ramah Pengguna (Zero Raw Error Leak)**
+   * Seluruh form diimplementasikan dengan trait `HasFriendlyNotifications` dan file terjemahan `lang/id/validation.php`.
+   * Setiap kali terjadi kesalahan input (seperti nomor HP duplikat, NISN kembar, email sudah terdaftar, atau gagal validasi lainnya), sistem menampilkan pesan bubble/pop-up **Toast Notifikasi Berwarna Merah (Danger)** yang informatif dalam Bahasa Indonesia alami.
+   * Mencegah total tampilan pesan error database mentah, SQL exception, atau halaman 500 error ke hadapan pengguna.
+
+5. **Manajemen Profil & Tanda Tangan Digital Bendahara (Halaman Profile `/admin/profile`)**
    * Pembaruan Nama Resmi Bendahara dan unggah Tanda Tangan Digital (format PNG/JPG transparan).
-   * **Auto-Redirect ke Dashboard**: Setelah proses penyimpanan profil bendahara berhasil, sistem otomatis mengarahkan admin kembali ke **Dashboard Utama** (`/admin`).
+   * **Auto-Redirect ke Dashboard**: Setelah data profil bendahara berhasil disimpan, sistem otomatis mengarahkan admin kembali ke **Dashboard Utama** (`/admin`).
    * **Historical Snapshot & Immutabilitas Dokumen PDF**:
      * Setiap Invoice Tagihan dan Kuitansi Pembayaran yang diterbitkan otomatis mengunci (*snapshot*) nama & tanda tangan bendahara yang aktif saat itu.
-     * Dokumen masa lalu yang terbit pada periode bendahara sebelumnya (misal: "Bu Putri") **tetap permanen bertanda tangan Bu Putri** dan tidak akan berubah ketika bendahara baru (misal: "Pak Putra") menjabat.
-     * Dokumen baru yang terbit setelah pergantian bendahara otomatis menggunakan nama & tanda tangan Pak Putra.
-   * Mendukung pergantian pejabat bendahara kapan saja secara dinamis.
+     * Dokumen masa lalu yang terbit pada periode bendahara sebelumnya tetap permanen bertanda tangan pejabat terdahulu.
+     * Dokumen baru yang terbit setelah pergantian bendahara otomatis menggunakan nama & tanda tangan bendahara baru.
 
-3. **Manajemen Master Tahun Ajaran & Status Periode Aktif**
+6. **Manajemen Master Tahun Ajaran & Status Periode Aktif (Eksklusif Super Admin)**
    * Pembuatan dan pengelolaan data tahun ajaran baru secara intuitif (cukup input Tanggal Mulai dan Tanggal Selesai, nama tahun ajaran seperti `2026/2027` digenerate otomatis).
    * Penetapan tanggal mulai (*start date*) dan tanggal berakhir (*end date*) tahun ajaran.
    * Fitur aktivasi 1 tahun ajaran berjalan secara otomatis menonaktifkan tahun ajaran sebelumnya.
+   * Akses dan navigasi menu Tahun Ajaran dibatasi eksklusif hanya untuk Super Admin.
 
-4. **Kenaikan Kelas Massal & Transisi Tahun Ajaran Baru**
+7. **Kenaikan Kelas Massal & Transisi Tahun Ajaran Baru**
    * Eksekusi kenaikan tingkat otomatis seluruh siswa aktif (Kelas 7 naik ke Kelas 8, Kelas 8 naik ke Kelas 9).
    * Kelulusan otomatis (*auto-graduation*) bagi seluruh siswa Kelas 9 menjadi status Lulus (`graduated`).
    * Form *repeater* dinamis pengecualian untuk siswa tinggal kelas yang dilengkapi fitur pencarian terkelompok per kelas.
    * Pencatatan riwayat penempatan kelas siswa di tabel histori akademik (`student_academic_years`).
 
-5. **Akses & Monitoring Audit Trail Sistem (Eksklusif Super Admin)**
-   * Rekam jejak lengkap seluruh aktivitas administratif dan finansial di sistem (termasuk mutasi siswa dan transisi akademik).
+8. **Akses & Monitoring Audit Trail Sistem Otomatis (`/admin/audit-logs`)**
+   * Rekam jejak otomatis seluruh aktivitas administratif dan finansial melalui Eloquent Observers di semua model (`User`, `Student`, `ParentProfile`, `Bill`, `Payment`, `AcademicYear`, `PaymentType`).
    * Mencatat waktu kejadian, nama pelaku (*actor*), role, tipe entitas data (*auditable type*), ID data, IP address, dan User Agent browser.
    * Perbandingan visual perubahan data sebelum (*old values*) dan sesudah (*new values*).
-   * Bersifat *immutable* (tidak dapat diedit/dihapus oleh siapapun) untuk kepatuhan audit transparansi.
+   * Bersifat *immutable* (tidak dapat diedit/dihapus oleh siapapun).
+   * Menu disembunyikan dari sidebar agar antarmuka ringkas, namun dapat diakses langsung oleh Super Admin melalui URL `/admin/audit-logs` (didukung auto-redirect dari `/admin/audit-log`).
 
-6. **Konfigurasi Master Jenis Pembayaran & Matriks Tarif Resmi Klien (11 Kategori Biaya)**
+9. **Konfigurasi Master Jenis Pembayaran & Matriks Tarif Resmi Klien (Eksklusif Super Admin)**
    * Pengelolaan 11 kategori biaya resmi madrasah: 
      1. **SPP Bulanan**: Rp 75.000 / bulan
      2. **Pendaftaran Siswa Baru (PPDB)**: Rp 1.190.000 (Satu Kali Bayar)
@@ -59,24 +79,20 @@ Super Admin memiliki hak akses tertinggi di sistem dengan wewenang mengelola kon
      10. **Study Tour**: Rp 450.000 (Satu Kali Bayar)
      11. **Akhir Tahun (Pelepasan & Wisuda)**: Rp 2.000.000 (Kelas 9)
    * Fleksibilitas penentuan tarif per jenjang kelas (7, 8, 9) dan rombel (*class level + rombel price matrix*).
+   * Akses dan navigasi menu dibatasi eksklusif hanya untuk Super Admin.
 
-7. **Pengaturan Dispensasi Jatuh Tempo Khusus Siswa (Due Date Override)**
-   * Penetapan tanggal jatuh tempo khusus per siswa berdasarkan kesepakatan tertulis dispensasi dengan pihak madrasah.
-   * Override otomatis menggantikan tanggal jatuh tempo default (tgl 10) saat tagihan diterbitkan.
+10. **Pengaturan Dispensasi Jatuh Tempo Khusus Siswa (Due Date Override)**
+    * Penetapan tanggal jatuh tempo khusus per siswa berdasarkan kesepakatan tertulis dispensasi dengan pihak madrasah.
+    * Override otomatis menggantikan tanggal jatuh tempo default (tgl 10) saat tagihan diterbitkan.
 
-8. **Manajemen Akun Pengguna & Hak Akses Staff**
-   * Pengelolaan akun login staf internal (Super Admin dan Admin).
-   * Dukungan autentikasi ganda (Email atau Nomor HP) dengan pesan kesalahan yang informatif dan terisolasi.
-   * Pengaturan kata sandi terenkripsi Bcrypt (12 rounds) dan otorisasi panel `/admin`.
+11. **Pusat Konfigurasi Identitas Lembaga & Rekening Bank Yayasan**
+    * Pengaturan terpusat data nama yayasan, nama madrasah, alamat lengkap, dan nomor rekening resmi (`config/school.php`).
+    * Konfigurasi rekening bank resmi: Bank BRI, No. Rekening `176901000210569`, A/N *Madrasah Tsanawiyah Miftahul Ulum*.
 
-9. **Pusat Konfigurasi Identitas Lembaga & Rekening Bank Yayasan**
-   * Pengaturan terpusat data nama yayasan, nama madrasah, alamat lengkap, dan nomor rekening resmi (`config/school.php`).
-   * Konfigurasi rekening bank resmi: Bank BRI, No. Rekening `176901000210569`, A/N *Madrasah Tsanawiyah Miftahul Ulum*.
-
-10. **Konfigurasi Integrasi Payment Gateway Midtrans**
+12. **Konfigurasi Integrasi Payment Gateway Midtrans**
     * Pengaturan Server Key, Client Key, Merchant ID, mode Sandbox / Production, dan aktivasi fitur 3D-Secure (3DS).
 
-11. **Ekspor & Unduh Laporan Rekapitulasi Keuangan Tingkat Eksekutif**
+13. **Ekspor & Unduh Laporan Rekapitulasi Keuangan Tingkat Eksekutif**
     * Unduh Rekap Pemasukan dan Rekap Tunggakan dalam format PDF Berstempel resmi dan CSV Clean untuk laporan rapat yayasan dan komite sekolah.
 
 ---
@@ -91,7 +107,7 @@ Admin bertugas menangani operasional harian madrasah, mencakup pengelolaan data 
 
 2. **Manajemen Data Siswa / Santri Lengkap & Rombel Dinamis**
    * Pengelolaan data santri: NISN (unik), NISM, Nama Lengkap, Jenis Kelamin, Tanggal Lahir, Tingkat Kelas (7, 8, 9), Rombel Dinamis (Kelas 7: 7.1-7.3, Kelas 8: 8.1-8.4, Kelas 9: 9.1-9.4), Tahun Masuk, Status Default Aktif (`active`), Email, No. HP, dan Alamat.
-   * Relasi langsung dengan akun orang tua/wali siswa (termasuk dukungan otomatis untuk saudara kandung / *siblings*).
+   * Relasi langsung dengan akun orang tua/wali siswa (termasuk dukungan multi-anak / *siblings* dengan nomor kontak orang tua yang sama).
 
 3. **Manajemen Mutasi Siswa (Pindah / Keluar) & Pembatalan Tagihan Otomatis**
    * **Tombol Aksi Cepat `[ Mutasi / Pindah ]`**: Mengubah status siswa aktif menjadi Keluar / Pindah (`withdrawn`).
@@ -162,6 +178,7 @@ Admin bertugas menangani operasional harian madrasah, mencakup pengelolaan data 
 15. **Monitoring Riwayat Log WhatsApp (WhatsApp Logs)**
     * Tabel riwayat seluruh notifikasi WhatsApp yang disiapkan dan dikirimkan sistem.
     * Mencatat nama penerima, nomor telepon, jenis pesan (Tagihan Baru, Pengingat H-2, Pembayaran Sukses), nominal, waktu kirim, dan isi pesan lengkap.
+    * Integrasi otomatis: notifikasi bukti pembayaran lunas secara otomatis tercatat ke log WhatsApp.
 
 16. **Laporan Riwayat Pembayaran (Payment Report)**
     * Audit tabel seluruh transaksi pembayaran sukses.
