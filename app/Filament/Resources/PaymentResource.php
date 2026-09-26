@@ -147,6 +147,7 @@ class PaymentResource extends Resource
                     ->visible(fn (Payment $record) => $record->isSuccess())
                     ->url(function (Payment $record) {
                         $waService = new \App\Services\WhatsAppAutomationService;
+                        $waService->logPaymentSuccess($record);
                         $data = $waService->formatPaymentSuccessMessage($record);
 
                         return \App\Services\WhatsAppAutomationService::createWhatsAppUrl($data['phone_number'], $data['message']);

@@ -406,6 +406,7 @@ class BillResource extends Resource
                     ->color('success')
                     ->url(function (Bill $record) {
                         $waService = new \App\Services\WhatsAppAutomationService;
+                        $waService->logNewBill($record);
                         $data = $waService->formatNewBillMessage($record);
 
                         return \App\Services\WhatsAppAutomationService::createWhatsAppUrl($data['phone_number'], $data['message']);

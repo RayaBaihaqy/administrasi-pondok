@@ -18,7 +18,7 @@ class WhatsAppAutomationService
         $student = $payment->student;
         $parent = $student?->parentProfile ?? $student?->parent;
         $recipientName = $parent?->full_name ?? 'Wali '.($student?->full_name ?? 'Siswa');
-        $phone = $parent?->phone ?? '081234567890';
+        $phone = $parent?->phone ?: ($student?->phone ?: ($parent?->user?->phone ?: '081234567890'));
         $amount = (int) $payment->amount;
 
         $paymentNumber = $payment->payment_number ?? ('PAY-'.str_pad((string) $payment->id, 6, '0', STR_PAD_LEFT));
@@ -92,7 +92,7 @@ class WhatsAppAutomationService
         $student = $bill->student;
         $parent = $student?->parentProfile ?? $student?->parent;
         $recipientName = $parent?->full_name ?? 'Wali '.($student?->full_name ?? 'Siswa');
-        $phone = $parent?->phone ?? '081234567890';
+        $phone = $parent?->phone ?: ($student?->phone ?: ($parent?->user?->phone ?: '081234567890'));
         $amount = (int) $bill->outstanding_amount;
 
         $dueDateStr = $bill->due_date ? Carbon::parse($bill->due_date)->translatedFormat('d F Y') : '-';
@@ -171,7 +171,7 @@ class WhatsAppAutomationService
         $student = $bill->student;
         $parent = $student?->parentProfile ?? $student?->parent;
         $recipientName = $parent?->full_name ?? 'Wali '.($student?->full_name ?? 'Siswa');
-        $phone = $parent?->phone ?? '081234567890';
+        $phone = $parent?->phone ?: ($student?->phone ?: ($parent?->user?->phone ?: '081234567890'));
         $amount = (int) $bill->amount;
 
         $dueDateStr = $bill->due_date ? Carbon::parse($bill->due_date)->translatedFormat('d F Y') : '-';
