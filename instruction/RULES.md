@@ -154,6 +154,7 @@ Sistem mengunci 11 kategori pos pembayaran resmi beserta nominal bakunya:
 # 7. Aturan Notifikasi WhatsApp 1-Klik (`wa.me`) & Audit Log
 
 - Tombol kirim WhatsApp menyusun link `https://wa.me/{phone}?text={encoded_message}` bebas biaya langganan gateway.
+- Pesan WhatsApp wajib mengikuti format baku resmi madrasah (`MTs. MIFTAHUL 'ULUM` & alamat lengkap), rincian transaksi berpoin, link dokumen PDF resmi (`/docs/invoice/{no}` dan `/docs/receipt/{no}`), serta salam penutup resmi Bendahara MTs Miftahul 'Ulum.
 - Seluruh riwayat pengiriman tagihan baru, pengingat tempo, dan pembayaran sukses dicatat otomatis ke tabel `whatsapp_logs`.
 - Seluruh mutasi model dicatat otomatis ke tabel `audit_logs` melalui Observers.
 

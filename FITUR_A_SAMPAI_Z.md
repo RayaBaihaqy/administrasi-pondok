@@ -172,7 +172,7 @@ Admin bertugas menangani operasional harian madrasah, mencakup pengelolaan data 
 
 14. **Pengiriman Notifikasi WhatsApp 1-Klik (`wa.me`) Bebas Biaya Langganan**
     * Tombol aksi **"Kirim WA"** di baris tagihan dan pembayaran yang langsung membuka WhatsApp Web / Aplikasi WhatsApp.
-    * Otomatis memuat pesan berstandar resmi institusi dengan salam islami, rincian biaya, batas waktu, dan tautan unduh dokumen PDF resmi.
+    * Format pesan resmi terstandarisasi dengan kop madrasah (`MTs. MIFTAHUL 'ULUM` & alamat), salam islami, rincian biaya lengkap, instruksi pembayaran, tautan unduh dokumen PDF resmi berstempel (`/docs/invoice/{no}` dan `/docs/receipt/{no}`), serta penutup resmi Bendahara.
     * Normalisasi otomatis nomor handphone lokal (`08xx`, `+628xx`, `628xx`).
 
 15. **Monitoring Riwayat Log WhatsApp (WhatsApp Logs)**

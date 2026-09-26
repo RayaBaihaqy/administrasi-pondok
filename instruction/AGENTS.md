@@ -96,6 +96,10 @@ Login mendukung Email atau Nomor Telepon (`08xx`, `+628xx`, `628xx`) dengan pesa
 - Siswa `withdrawn` dilarang dimasukkan ke penerbitan tagihan SPP bulanan otomatis berikutnya.
 - Log mutasi dan pengaktifan kembali dicatat ke `audit_logs` secara otomatis melalui `StudentObserver`.
 
+### 3.13 Standarisasi Format Pesan WhatsApp (`wa.me`)
+- Seluruh pesan notifikasi yang digenerate oleh `WhatsAppAutomationService` wajib menggunakan format kop resmi institusi (`MTs. MIFTAHUL 'ULUM` & alamat lengkap), rincian data transaksi berpoin, tautan unduh dokumen PDF resmi berstempel (`/docs/invoice/...` dan `/docs/receipt/...`), serta penutup resmi Bendahara MTs Miftahul 'Ulum.
+- Tidak menyertakan kalimat "Jazakumullah Khairan Katsiran" di dalam template.
+
 ---
 
 # 4. Prosedur Kerja & Verifikasi (Workflow)

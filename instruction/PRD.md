@@ -192,10 +192,11 @@ Struktur madrasah terdiri atas 3 jenjang kelas MTs dengan pembagian rombel khusu
 ---
 
 # 9. Notifikasi WhatsApp 1-Klik (`wa.me`)
-
-- Tombol **"Kirim WA"** pada panel admin langsung menyusun format pesan resmi institusi via `https://wa.me/` bebas biaya gateway.
+ 
+- Tombol **"Kirim WA"** pada panel admin langsung menyusun format pesan resmi institusi via `https://wa.me/` bebas biaya langganan gateway.
+- Format pesan resmi terstandarisasi dengan kop madrasah (`MTs. MIFTAHUL 'ULUM` & alamat), salam islami, rincian biaya lengkap, batas tempo / rincian pembayaran lunas, tautan unduh dokumen PDF resmi berstempel (`/docs/invoice/{no}` dan `/docs/receipt/{no}`), serta penutup resmi Bendahara MTs Miftahul 'Ulum.
 - Normalisasi nomor handphone otomatis ke format internasional `628xx`.
-- Seluruh riwayat pengiriman notifikasi tercatat di menu **Log WhatsApp** (`/admin/whats-app-logs`).
+- Seluruh riwayat pengiriman notifikasi tercatat otomatis di menu **Log WhatsApp** (`/admin/whats-app-logs`).
 
 ---
 

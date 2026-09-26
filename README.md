@@ -126,8 +126,8 @@ Seluruh identitas lembaga dan informasi rekening pembayaran terpusat pada file k
 
 ### 10. Otomasi WhatsApp & Riwayat Log WhatsApp (`wa.me`)
 * **100% Bebas Biaya Gateway**: Menggunakan URL generator `https://wa.me/` yang langsung membuka aplikasi WhatsApp / WhatsApp Web.
-* Pesan notifikasi melampirkan link unduh dokumen PDF resmi berstempel (`/docs/invoice/{no}` dan `/docs/receipt/{no}`).
-* Semua aktivitas pengiriman tagihan baru, pengingat jatuh tempo, dan bukti pembayaran sukses otomatis tercatat di menu **Log WhatsApp** (`/admin/whats-app-logs`).
+* **Template Pesan Resmi Terstandarisasi**: Menggunakan format kop madrasah resmi (`MTs. MIFTAHUL 'ULUM` & alamat), rincian data transaksi terstruktur, tautan unduh dokumen PDF resmi berstempel (`/docs/invoice/{no}` dan `/docs/receipt/{no}`), serta salam penutup resmi dari Bendahara MTs Miftahul 'Ulum.
+* **Pencatatan Otomatis ke Log WhatsApp**: Semua aktivitas pengiriman tagihan baru, pengingat jatuh tempo (H-3/H-7), dan bukti pembayaran sukses otomatis tercatat di menu **Log WhatsApp** (`/admin/whats-app-logs`).
 
 ---
 
