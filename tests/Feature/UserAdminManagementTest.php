@@ -37,6 +37,27 @@ class UserAdminManagementTest extends TestCase
             ->assertSee('Kelola Admin');
     }
 
+    public function test_list_users_table_only_shows_admin_and_excludes_super_admin(): void
+    {
+        $this->actingAs($this->superAdmin);
+
+        Livewire::test(UserResource\Pages\ListUsers::class)
+            ->assertCanSeeTableRecords([$this->admin])
+            ->assertCanNotSeeTableRecords([$this->superAdmin]);
+    }
+
+    public function test_super_admin_cannot_be_edited_or_deleted_via_user_resource(): void
+    {
+        $this->actingAs($this->superAdmin);
+
+        $this->assertFalse(UserResource::canEdit($this->superAdmin));
+        $this->assertFalse(UserResource::canDelete($this->superAdmin));
+
+        // Direct access to edit super admin page must abort 403
+        Livewire::test(UserResource\Pages\EditUser::class, ['record' => $this->superAdmin->getKey()])
+            ->assertForbidden();
+    }
+
     public function test_admin_staff_cannot_access_user_resource(): void
     {
         $this->actingAs($this->admin);
@@ -60,7 +81,6 @@ class UserAdminManagementTest extends TestCase
                 'name' => 'Ustadz Baru Admin',
                 'email' => $uniqueEmail,
                 'phone' => $uniquePhone,
-                'role' => User::ROLE_ADMIN,
                 'password' => 'password123',
             ])
             ->call('create')
@@ -89,7 +109,6 @@ class UserAdminManagementTest extends TestCase
                 'name' => 'Admin Duplikat',
                 'email' => $this->superAdmin->email,
                 'phone' => $this->superAdmin->phone ?? '08123456789',
-                'role' => User::ROLE_ADMIN,
                 'password' => 'password123',
             ])
             ->call('create')

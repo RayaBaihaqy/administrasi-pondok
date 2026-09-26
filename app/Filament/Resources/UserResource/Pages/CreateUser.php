@@ -14,6 +14,13 @@ class CreateUser extends CreateRecord
 
     protected static ?string $title = 'Tambah Admin Baru';
 
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        $data['role'] = \App\Models\User::ROLE_ADMIN;
+
+        return $data;
+    }
+
     protected function handleRecordCreation(array $data): \Illuminate\Database\Eloquent\Model
     {
         try {

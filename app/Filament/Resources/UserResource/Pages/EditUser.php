@@ -16,12 +16,31 @@ class EditUser extends EditRecord
 
     protected static ?string $title = 'Edit Akun Admin';
 
+    public function mount(int | string $record): void
+    {
+        parent::mount($record);
+
+        if ($this->record->isSuperAdmin()) {
+            abort(403, 'Akun Super Admin tidak dapat diubah dari menu Kelola Admin.');
+        }
+    }
+
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        $data['role'] = \App\Models\User::ROLE_ADMIN;
+
+        return $data;
+    }
+
     protected function getHeaderActions(): array
     {
         return [
             Actions\DeleteAction::make()
                 ->label('Hapus')
-                ->visible(fn (): bool => $this->record->id !== Auth::id()),
+                ->visible(fn (): bool => $this->record->id !== Auth::id() && ! $this->record->isSuperAdmin())
+                ->modalHeading(fn () => "Hapus Akun Admin: {$this->record->name}")
+                ->modalDescription('Apakah Anda yakin ingin menghapus akun admin ini? Tindakan ini tidak dapat dibatalkan.')
+                ->modalSubmitActionLabel('Ya, Hapus Admin'),
         ];
     }
 

@@ -37,9 +37,12 @@ class UserResource extends Resource
                 Section::make('Informasi Akun Admin')
                     ->schema([
                         Forms\Components\TextInput::make('name')
-                            ->label('Nama Lengkap')
+                            ->label('Nama Lengkap Admin')
                             ->placeholder('Contoh: Ustadz Abdullah, S.Pd.')
                             ->required()
+                            ->validationMessages([
+                                'required' => 'Nama lengkap admin wajib diisi.',
+                            ])
                             ->maxLength(255),
 
                         Forms\Components\TextInput::make('email')
@@ -49,6 +52,8 @@ class UserResource extends Resource
                             ->maxLength(255)
                             ->unique(ignoreRecord: true)
                             ->validationMessages([
+                                'required' => 'Email login wajib diisi.',
+                                'email' => 'Format email login tidak valid.',
                                 'unique' => 'Email login [:input] sudah terdaftar pada akun lain. Mohon gunakan email yang berbeda.',
                             ]),
 
@@ -61,14 +66,8 @@ class UserResource extends Resource
                                 'unique' => 'Nomor WhatsApp/HP [:input] sudah digunakan oleh akun lain.',
                             ]),
 
-                        Forms\Components\Select::make('role')
-                            ->label('Hak Akses / Role')
-                            ->options([
-                                User::ROLE_ADMIN => 'Admin Staff (Operasional Harian)',
-                                User::ROLE_SUPER_ADMIN => 'Super Admin (Akses Penuh)',
-                            ])
-                            ->default(User::ROLE_ADMIN)
-                            ->required(),
+                        Forms\Components\Hidden::make('role')
+                            ->default(User::ROLE_ADMIN),
 
                         Forms\Components\TextInput::make('password')
                             ->label('Password')
@@ -78,6 +77,10 @@ class UserResource extends Resource
                             ->required(fn (string $operation): bool => $operation === 'create')
                             ->dehydrated(fn ($state) => filled($state))
                             ->dehydrateStateUsing(fn ($state) => bcrypt($state))
+                            ->validationMessages([
+                                'required' => 'Password wajib diisi untuk admin baru.',
+                                'min' => 'Password minimal harus :min karakter.',
+                            ])
                             ->helperText(fn (string $operation): ?string => $operation === 'edit' ? 'Kosongkan jika tidak ingin mengubah password akun.' : 'Minimal 6 karakter.'),
                     ])
                     ->columns(2),
@@ -87,7 +90,7 @@ class UserResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn ($query) => $query->whereIn('role', [User::ROLE_SUPER_ADMIN, User::ROLE_ADMIN]))
+            ->modifyQueryUsing(fn ($query) => $query->where('role', User::ROLE_ADMIN))
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->label('Nama Admin')
@@ -107,16 +110,8 @@ class UserResource extends Resource
                 Tables\Columns\TextColumn::make('role')
                     ->badge()
                     ->label('Hak Akses')
-                    ->color(fn (string $state): string => match ($state) {
-                        User::ROLE_SUPER_ADMIN => 'danger',
-                        User::ROLE_ADMIN => 'warning',
-                        default => 'secondary',
-                    })
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        User::ROLE_SUPER_ADMIN => 'Super Admin',
-                        User::ROLE_ADMIN => 'Admin Staff',
-                        default => $state,
-                    }),
+                    ->color('warning')
+                    ->formatStateUsing(fn (string $state): string => 'Admin Staff'),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Terdaftar')
@@ -125,12 +120,7 @@ class UserResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('role')
-                    ->label('Hak Akses')
-                    ->options([
-                        User::ROLE_SUPER_ADMIN => 'Super Admin',
-                        User::ROLE_ADMIN => 'Admin Staff',
-                    ]),
+                //
             ])
             ->actions([
                 Actions\Action::make('resetPassword')
@@ -146,25 +136,40 @@ class UserResource extends Resource
                             ->password()
                             ->revealable()
                             ->required()
-                            ->minLength(6),
+                            ->minLength(6)
+                            ->validationMessages([
+                                'required' => 'Password baru wajib diisi.',
+                                'min' => 'Password baru minimal harus :min karakter.',
+                            ]),
                     ])
                     ->action(function (User $record, array $data): void {
-                        $record->update([
-                            'password' => bcrypt($data['new_password']),
-                        ]);
+                        try {
+                            $record->update([
+                                'password' => bcrypt($data['new_password']),
+                            ]);
 
-                        Notification::make()
-                            ->title('Password Berhasil Diubah')
-                            ->body("Password untuk akun {$record->name} berhasil diperbarui.")
-                            ->success()
-                            ->send();
+                            Notification::make()
+                                ->title('Password Berhasil Diubah')
+                                ->body("Password untuk akun admin {$record->name} berhasil diperbarui.")
+                                ->success()
+                                ->send();
+                        } catch (\Throwable $e) {
+                            Notification::make()
+                                ->title('Gagal Mengubah Password')
+                                ->body('Terjadi kendala saat mereset password. Silakan coba lagi.')
+                                ->danger()
+                                ->persistent()
+                                ->send();
+                        }
                     }),
 
                 Actions\EditAction::make(),
                 Actions\DeleteAction::make()
                     ->label('Hapus')
                     ->visible(fn (User $record): bool => $record->id !== Auth::id())
-                    ->modalDescription('Apakah Anda yakin ingin menghapus akun admin ini? Tindakan ini tidak dapat dibatalkan.'),
+                    ->modalHeading(fn (User $record) => "Hapus Akun Admin: {$record->name}")
+                    ->modalDescription('Apakah Anda yakin ingin menghapus akun admin ini? Tindakan ini tidak dapat dibatalkan.')
+                    ->modalSubmitActionLabel('Ya, Hapus Admin'),
             ])
             ->bulkActions([])
             ->defaultSort('created_at', 'desc');
@@ -201,12 +206,16 @@ class UserResource extends Resource
 
     public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
     {
+        if ($record instanceof User && $record->isSuperAdmin()) {
+            return false;
+        }
+
         return Auth::user()?->isSuperAdmin() ?? false;
     }
 
     public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
     {
-        if ($record->id === Auth::id()) {
+        if ($record->id === Auth::id() || ($record instanceof User && $record->isSuperAdmin())) {
             return false;
         }
 
