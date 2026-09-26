@@ -3,11 +3,16 @@
 namespace App\Filament\Resources\ParentResource\Pages;
 
 use App\Filament\Resources\ParentResource;
+use App\Filament\Traits\HasFriendlyNotifications;
+use App\Models\User;
 use Filament\Actions;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 
 class EditParent extends EditRecord
 {
+    use HasFriendlyNotifications;
+
     protected static string $resource = ParentResource::class;
 
     protected function getHeaderActions(): array
@@ -18,26 +23,45 @@ class EditParent extends EditRecord
         ];
     }
 
-    protected function mutateFormDataBeforeSave(array $data): array
+    protected function handleRecordUpdate(\Illuminate\Database\Eloquent\Model $record, array $data): \Illuminate\Database\Eloquent\Model
     {
-        // Update user account jika email/password berubah
-        $user = $this->record->user;
+        try {
+            $phone = ! empty($data['phone']) ? trim($data['phone']) : null;
+            $userEmail = ! empty($this->data['user_email']) ? trim($this->data['user_email']) : null;
+            $user = $record->user;
 
-        if ($user) {
-            if (! empty($this->data['user_email'])) {
-                $user->email = $this->data['user_email'];
+            if ($phone && $user) {
+                $duplicatePhone = User::where('phone', $phone)->where('id', '!=', $user->id)->exists();
+                if ($duplicatePhone) {
+                    Notification::make()
+                        ->title('Nomor Telepon Duplikat')
+                        ->body("Nomor telepon [{$phone}] sudah digunakan oleh akun pengguna lain. Mohon gunakan nomor yang berbeda.")
+                        ->danger()
+                        ->persistent()
+                        ->send();
+                    $this->halt();
+                }
             }
-            $user->name = $data['full_name'];
-            $user->phone = $data['phone'] ?? null;
 
-            if (! empty($this->data['user_password'])) {
-                $user->password = bcrypt($this->data['user_password']);
+            if ($user) {
+                if (! empty($userEmail)) {
+                    $user->email = $userEmail;
+                }
+                $user->name = $data['full_name'];
+                $user->phone = $phone;
+
+                if (! empty($this->data['user_password'])) {
+                    $user->password = bcrypt($this->data['user_password']);
+                }
+
+                $user->save();
             }
 
-            $user->save();
+            return parent::handleRecordUpdate($record, $data);
+        } catch (\Throwable $e) {
+            $this->handleDatabaseException($e, 'orang tua');
+            $this->halt();
         }
-
-        return $data;
     }
 
     protected function getRedirectUrl(): string

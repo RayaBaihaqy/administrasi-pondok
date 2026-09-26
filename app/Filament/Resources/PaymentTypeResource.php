@@ -40,12 +40,18 @@ class PaymentTypeResource extends Resource
                             ->placeholder('SPP / AT / DAFTAR_ULANG')
                             ->required()
                             ->unique(ignoreRecord: true)
+                            ->validationMessages([
+                                'unique' => 'Kode jenis pembayaran [:input] sudah digunakan. Mohon gunakan kode lain.',
+                            ])
                             ->maxLength(50),
 
                         Forms\Components\TextInput::make('name')
                             ->label('Nama Jenis Pembayaran')
                             ->placeholder('SPP Bulanan')
                             ->required()
+                            ->validationMessages([
+                                'required' => 'Nama jenis pembayaran wajib diisi.',
+                            ])
                             ->maxLength(255),
 
                         Forms\Components\Select::make('billing_type')

@@ -3,11 +3,14 @@
 namespace App\Filament\Resources\BillResource\Pages;
 
 use App\Filament\Resources\BillResource;
+use App\Filament\Traits\HasFriendlyNotifications;
 use App\Models\BillItem;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreateBill extends CreateRecord
 {
+    use HasFriendlyNotifications;
+
     protected static string $resource = BillResource::class;
 
     protected static ?string $title = 'Buat Tagihan';
@@ -24,31 +27,36 @@ class CreateBill extends CreateRecord
 
     protected function handleRecordCreation(array $data): \Illuminate\Database\Eloquent\Model
     {
-        $isInstallment = ! empty($data['is_installment']);
+        try {
+            $isInstallment = ! empty($data['is_installment']);
 
-        if ($isInstallment && ! empty($data['tenor_count']) && (int) $data['tenor_count'] > 1) {
-            $student = \App\Models\Student::findOrFail($data['student_id']);
-            $paymentType = \App\Models\PaymentType::findOrFail($data['payment_type_id']);
-            $academicYear = ! empty($data['academic_year_id']) ? \App\Models\AcademicYear::find($data['academic_year_id']) : null;
+            if ($isInstallment && ! empty($data['tenor_count']) && (int) $data['tenor_count'] > 1) {
+                $student = \App\Models\Student::findOrFail($data['student_id']);
+                $paymentType = \App\Models\PaymentType::findOrFail($data['payment_type_id']);
+                $academicYear = ! empty($data['academic_year_id']) ? \App\Models\AcademicYear::find($data['academic_year_id']) : null;
 
-            $billingService = new \App\Services\BillingService;
-            $createdBills = $billingService->createInstallmentBills(
-                student: $student,
-                paymentType: $paymentType,
-                totalAmount: (int) $data['amount'],
-                tenorCount: (int) $data['tenor_count'],
-                startBillingPeriod: $data['billing_period'] ?? null,
-                initialDueDate: $data['due_date'] ?? null,
-                academicYear: $academicYear,
-                notes: $data['notes'] ?? null
-            );
+                $billingService = new \App\Services\BillingService;
+                $createdBills = $billingService->createInstallmentBills(
+                    student: $student,
+                    paymentType: $paymentType,
+                    totalAmount: (int) $data['amount'],
+                    tenorCount: (int) $data['tenor_count'],
+                    startBillingPeriod: $data['billing_period'] ?? null,
+                    initialDueDate: $data['due_date'] ?? null,
+                    academicYear: $academicYear,
+                    notes: $data['notes'] ?? null
+                );
 
-            if (! empty($createdBills)) {
-                return $createdBills[0];
+                if (! empty($createdBills)) {
+                    return $createdBills[0];
+                }
             }
-        }
 
-        return parent::handleRecordCreation($data);
+            return parent::handleRecordCreation($data);
+        } catch (\Throwable $e) {
+            $this->handleDatabaseException($e, 'tagihan');
+            $this->halt();
+        }
     }
 
     protected function afterCreate(): void

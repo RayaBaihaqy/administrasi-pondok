@@ -40,6 +40,9 @@ class StudentResource extends Resource
                         Forms\Components\TextInput::make('nis')
                             ->label('NISN (Nomor Induk Siswa Nasional)')
                             ->unique(ignoreRecord: true)
+                            ->validationMessages([
+                                'unique' => 'NISN [:input] sudah terdaftar pada siswa lain. Mohon periksa kembali.',
+                            ])
                             ->required(),
 
                         Forms\Components\TextInput::make('nism')
@@ -113,24 +116,75 @@ class StudentResource extends Resource
                                     ->rows(2),
                             ])
                             ->createOptionUsing(function (array $data): int {
-                                // Buat user account untuk orang tua
-                                $user = \App\Models\User::create([
-                                    'name' => $data['full_name'],
-                                    'email' => $data['contact_email'] ?? 'parent_'.time().'@pondok.test',
-                                    'phone' => $data['phone'] ?? null,
-                                    'password' => bcrypt('password'),
-                                    'role' => 'parent',
-                                ]);
+                                $phone = trim($data['phone'] ?? '');
+                                $email = trim($data['contact_email'] ?? '');
 
-                                $parent = ParentProfile::create([
-                                    'user_id' => $user->id,
-                                    'full_name' => $data['full_name'],
-                                    'phone' => $data['phone'] ?? null,
-                                    'contact_email' => $data['contact_email'] ?? null,
-                                    'address' => $data['address'] ?? null,
-                                ]);
+                                // Cek duplikat nomor HP di User dan ParentProfile
+                                if ($phone !== '') {
+                                    $existsInUser = \App\Models\User::where('phone', $phone)->exists();
+                                    $existsInParent = ParentProfile::where('phone', $phone)->exists();
 
-                                return $parent->id;
+                                    if ($existsInUser || $existsInParent) {
+                                        Notification::make()
+                                            ->title('Nomor Telepon Duplikat')
+                                            ->body("Nomor telepon [{$phone}] sudah terdaftar pada orang tua/wali lain. Silakan pilih dari dropdown atau gunakan nomor yang berbeda.")
+                                            ->danger()
+                                            ->persistent()
+                                            ->send();
+
+                                        throw \Illuminate\Validation\ValidationException::withMessages([
+                                            'phone' => "Nomor telepon [{$phone}] sudah terdaftar pada orang tua/wali lain.",
+                                        ]);
+                                    }
+                                }
+
+                                // Cek duplikat email jika diisi
+                                if ($email !== '') {
+                                    $existsEmail = \App\Models\User::where('email', $email)->exists();
+                                    if ($existsEmail) {
+                                        Notification::make()
+                                            ->title('Email Duplikat')
+                                            ->body("Email [{$email}] sudah terdaftar di sistem. Mohon gunakan email yang lain.")
+                                            ->danger()
+                                            ->persistent()
+                                            ->send();
+
+                                        throw \Illuminate\Validation\ValidationException::withMessages([
+                                            'contact_email' => "Email [{$email}] sudah terdaftar di sistem.",
+                                        ]);
+                                    }
+                                }
+
+                                try {
+                                    $userEmail = ! empty($email) ? $email : 'parent_'.time().'_'.rand(100, 999).'@pondok.test';
+
+                                    $user = \App\Models\User::create([
+                                        'name' => $data['full_name'],
+                                        'email' => $userEmail,
+                                        'phone' => ! empty($phone) ? $phone : null,
+                                        'password' => bcrypt('password'),
+                                        'role' => 'parent',
+                                    ]);
+
+                                    $parent = ParentProfile::create([
+                                        'user_id' => $user->id,
+                                        'full_name' => $data['full_name'],
+                                        'phone' => ! empty($phone) ? $phone : null,
+                                        'contact_email' => ! empty($email) ? $email : null,
+                                        'address' => $data['address'] ?? null,
+                                    ]);
+
+                                    return $parent->id;
+                                } catch (\Throwable $e) {
+                                    Notification::make()
+                                        ->title('Gagal Menambahkan Wali')
+                                        ->body('Terjadi kendala saat menambahkan data wali. Mohon periksa kembali isian Anda.')
+                                        ->danger()
+                                        ->persistent()
+                                        ->send();
+
+                                    throw $e;
+                                }
                             }),
                     ]),
 
@@ -139,11 +193,19 @@ class StudentResource extends Resource
                         Forms\Components\TextInput::make('email')
                             ->label('Email')
                             ->email()
+                            ->unique(table: 'students', column: 'email', ignoreRecord: true)
+                            ->validationMessages([
+                                'unique' => 'Email [:input] sudah terdaftar pada siswa lain.',
+                            ])
                             ->maxLength(255),
 
                         Forms\Components\TextInput::make('phone')
                             ->label('No. HP')
                             ->tel()
+                            ->unique(table: 'students', column: 'phone', ignoreRecord: true)
+                            ->validationMessages([
+                                'unique' => 'Nomor HP [:input] sudah terdaftar pada siswa lain.',
+                            ])
                             ->maxLength(30),
 
                         Forms\Components\Textarea::make('address')

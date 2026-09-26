@@ -42,6 +42,10 @@ class ParentResource extends Resource
                         Forms\Components\TextInput::make('phone')
                             ->label('No. Telepon / WhatsApp')
                             ->required()
+                            ->unique(table: 'parents', column: 'phone', ignoreRecord: true)
+                            ->validationMessages([
+                                'unique' => 'Nomor telepon/WhatsApp [:input] sudah terdaftar pada wali lain.',
+                            ])
                             ->maxLength(30),
 
                         Forms\Components\TextInput::make('contact_email')
@@ -64,6 +68,9 @@ class ParentResource extends Resource
                             ->required()
                             ->maxLength(255)
                             ->unique(table: 'users', column: 'email', ignorable: fn (?ParentProfile $record) => $record?->user)
+                            ->validationMessages([
+                                'unique' => 'Email login [:input] sudah digunakan oleh akun lain.',
+                            ])
                             ->dehydrated(false)
                             ->afterStateHydrated(function (Forms\Components\TextInput $component, ?ParentProfile $record) {
                                 if ($record?->user) {

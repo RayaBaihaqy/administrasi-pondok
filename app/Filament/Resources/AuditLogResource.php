@@ -109,6 +109,39 @@ class AuditLogResource extends Resource
 
                 Tables\Columns\TextColumn::make('action')
                     ->label('Aktivitas')
+                    ->badge()
+                    ->formatStateUsing(fn (?string $state): string => match ($state) {
+                        'create_student' => 'Tambah Siswa',
+                        'update_student' => 'Update Siswa',
+                        'delete_student' => 'Hapus Siswa',
+                        'student_mutate_out' => 'Mutasi Keluar',
+                        'student_revert_mutation' => 'Aktifkan Kembali',
+                        'import_students' => 'Import Siswa',
+                        'create_parent' => 'Tambah Wali',
+                        'update_parent' => 'Update Wali',
+                        'delete_parent' => 'Hapus Wali',
+                        'create_bill' => 'Buat Tagihan',
+                        'update_bill' => 'Update Tagihan',
+                        'cancel_bill' => 'Batal Tagihan',
+                        'create_payment' => 'Transaksi Masuk',
+                        'record_manual_payment' => 'Bayar Manual',
+                        'update_payment' => 'Update Status Bayar',
+                        'create_academic_year' => 'Tambah Thn Ajaran',
+                        'activate_academic_year' => 'Aktifkan Thn Ajaran',
+                        'update_academic_year' => 'Update Thn Ajaran',
+                        'academic_year_transition' => 'Kenaikan Kelas',
+                        'create_payment_type' => 'Tambah Jns Bayar',
+                        'update_payment_type' => 'Update Jns Bayar',
+                        default => $state ? ucwords(str_replace('_', ' ', $state)) : '-',
+                    })
+                    ->color(fn (?string $state): string => match (true) {
+                        ! $state => 'secondary',
+                        str_contains($state, 'create') || str_contains($state, 'import') => 'success',
+                        str_contains($state, 'update') || str_contains($state, 'activate') || str_contains($state, 'transition') => 'warning',
+                        str_contains($state, 'delete') || str_contains($state, 'cancel') || str_contains($state, 'mutate_out') => 'danger',
+                        str_contains($state, 'payment') => 'info',
+                        default => 'secondary',
+                    })
                     ->searchable()
                     ->sortable(),
 
@@ -140,10 +173,25 @@ class AuditLogResource extends Resource
                     ->options([
                         'create_student' => 'Tambah Siswa',
                         'update_student' => 'Update Siswa',
+                        'delete_student' => 'Hapus Siswa',
+                        'student_mutate_out' => 'Mutasi Keluar',
+                        'student_revert_mutation' => 'Aktifkan Siswa Kembali',
+                        'import_students' => 'Import Excel Siswa',
                         'create_parent' => 'Tambah Orang Tua',
-                        'record_manual_payment' => 'Bayar Manual',
-                        'process_webhook' => 'Webhook Gateway',
-                        'generate_spp' => 'Generate SPP',
+                        'update_parent' => 'Update Orang Tua',
+                        'delete_parent' => 'Hapus Orang Tua',
+                        'create_bill' => 'Terbitkan Tagihan',
+                        'update_bill' => 'Update Tagihan',
+                        'cancel_bill' => 'Batalkan Tagihan',
+                        'create_payment' => 'Transaksi Pembayaran',
+                        'record_manual_payment' => 'Bayar Manual (Kasir)',
+                        'update_payment' => 'Update Status Bayar',
+                        'create_academic_year' => 'Tambah Tahun Ajaran',
+                        'activate_academic_year' => 'Aktifkan Tahun Ajaran',
+                        'update_academic_year' => 'Update Tahun Ajaran',
+                        'academic_year_transition' => 'Reset / Kenaikan Kelas',
+                        'create_payment_type' => 'Tambah Jenis Pembayaran',
+                        'update_payment_type' => 'Update Jenis Pembayaran',
                     ]),
             ])
             ->actions([

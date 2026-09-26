@@ -40,6 +40,9 @@ class AcademicYearResource extends Resource
                             ->placeholder('2026/2027')
                             ->required()
                             ->unique(ignoreRecord: true)
+                            ->validationMessages([
+                                'unique' => 'Nama tahun ajaran [:input] sudah terdaftar di sistem.',
+                            ])
                             ->maxLength(20),
 
                         Forms\Components\DatePicker::make('start_date')
@@ -49,7 +52,10 @@ class AcademicYearResource extends Resource
                         Forms\Components\DatePicker::make('end_date')
                             ->label('Tanggal Selesai')
                             ->required()
-                            ->after('start_date'),
+                            ->after('start_date')
+                            ->validationMessages([
+                                'after' => 'Tanggal selesai harus setelah tanggal mulai.',
+                            ]),
 
                         Forms\Components\Toggle::make('is_active')
                             ->label('Tahun Ajaran Aktif')
