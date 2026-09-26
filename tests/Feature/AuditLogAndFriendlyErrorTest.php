@@ -6,7 +6,6 @@ use App\Models\AcademicYear;
 use App\Models\AuditLog;
 use App\Models\Bill;
 use App\Models\ParentProfile;
-use App\Models\Payment;
 use App\Models\PaymentType;
 use App\Models\Student;
 use App\Models\User;
@@ -227,7 +226,7 @@ class AuditLogAndFriendlyErrorTest extends TestCase
         // Call the parent_id select createOptionUsing closure
         $schema = \Filament\Schemas\Schema::make();
         $form = \App\Filament\Resources\StudentResource::form($schema);
-        
+
         $phone = trim($data['phone']);
         $existsInUser = \App\Models\User::where('phone', $phone)->exists();
         $existsInParent = \App\Models\ParentProfile::where('phone', $phone)->exists();

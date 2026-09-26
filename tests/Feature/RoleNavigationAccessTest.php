@@ -19,6 +19,7 @@ class RoleNavigationAccessTest extends TestCase
     use DatabaseTransactions;
 
     protected User $superAdmin;
+
     protected User $admin;
 
     protected function setUp(): void

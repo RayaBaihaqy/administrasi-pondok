@@ -16,7 +16,7 @@ class EditUser extends EditRecord
 
     protected static ?string $title = 'Edit Akun Admin';
 
-    public function mount(int | string $record): void
+    public function mount(int|string $record): void
     {
         parent::mount($record);
 
